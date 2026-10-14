@@ -9,19 +9,25 @@
 //! - [`Button`]: four kinds — primary, secondary, quiet, danger — in three
 //!   sizes, with an optional icon and key hint;
 //! - [`TextField`], and [`field`] for a field that holds more than text;
-//! - [`Toggle`]: a choice of a few, shown together.
+//! - [`Toggle`]: a choice of a few, shown together;
+//! - [`Item`]: how a row, a sidebar entry or a card is marked — open, under the
+//!   pointer, where the keyboard is.
 //!
-//! A size is one height, one corner and one type size, for buttons, fields and
-//! toggles alike, so controls line up wherever they meet.
+//! A size is one height, one corner and one type size, for buttons, fields,
+//! toggles and items alike, so everything lines up wherever it meets. Rows,
+//! entries and cards take the regular corner; what sits inside one — chips,
+//! badges, avatars — the small one.
 
 pub mod theme;
 
 mod button;
 mod field;
+mod item;
 mod toggle;
 
 pub use button::{Button, Kind};
 pub use field::{TextField, field};
+pub use item::Item;
 pub use toggle::Toggle;
 
 use egui::{Color32, Ui};
