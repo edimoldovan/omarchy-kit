@@ -2,7 +2,7 @@
 name = "omarchy-kit"
 version = "0.1.0"
 edition = "2024"
-description = "egui in the colours of the Omarchy theme, with defaults where there is none: the theme, and buttons, text fields and a toggle drawn from it"
+description = "egui in the colours of the Omarchy theme, with defaults where there is none: the theme, and buttons, text fields, a toggle, item marks and a command palette drawn from it"
 
 [dependencies]
 egui = "0.33.3"

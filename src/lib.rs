@@ -11,7 +11,9 @@
 //! - [`TextField`], and [`field`] for a field that holds more than text;
 //! - [`Toggle`]: a choice of a few, shown together;
 //! - [`Item`]: how a row, a sidebar entry or a card is marked — open, under the
-//!   pointer, where the keyboard is.
+//!   pointer, where the keyboard is;
+//! - [`CommandPalette`]: every action there is, found by typing, each with its
+//!   key.
 //!
 //! A size is one height, one corner and one type size, for buttons, fields,
 //! toggles and items alike, so everything lines up wherever it meets. Rows,
@@ -23,11 +25,13 @@ pub mod theme;
 mod button;
 mod field;
 mod item;
+mod palette;
 mod toggle;
 
 pub use button::{Button, Kind};
 pub use field::{TextField, field};
 pub use item::Item;
+pub use palette::{Choice, CommandPalette};
 pub use toggle::Toggle;
 
 use egui::{Color32, Ui};
