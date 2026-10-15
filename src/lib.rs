@@ -10,6 +10,7 @@
 //!   sizes, with an optional icon and key hint;
 //! - [`TextField`], and [`field`] for a field that holds more than text;
 //! - [`Toggle`]: a choice of a few, shown together;
+//! - [`Slider`]: an amount between two ends, dragged;
 //! - [`Item`]: how a row, a sidebar entry or a card is marked — open, under the
 //!   pointer, where the keyboard is;
 //! - [`CommandPalette`]: every action there is, found by typing, each with its
@@ -26,12 +27,14 @@ mod button;
 mod field;
 mod item;
 mod palette;
+mod slider;
 mod toggle;
 
 pub use button::{Button, Kind};
 pub use field::{TextField, field};
 pub use item::Item;
 pub use palette::{Choice, CommandPalette};
+pub use slider::Slider;
 pub use toggle::Toggle;
 
 use egui::{Color32, Ui};
