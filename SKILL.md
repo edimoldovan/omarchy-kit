@@ -10,9 +10,6 @@ egui's visuals, and a small set of widgets drawn from those visuals and nothing
 else. Apps that use it look like one product and follow a theme switch live.
 Off Omarchy it falls back to a neutral dark theme.
 
-Used by Post (`crates/post-ui` in the fold repo) and by emiga; Post uses all
-of it and is the worked example.
-
 ## Set-up
 
 `Cargo.toml` — by git, pinned to a `rev`, so kit changes are taken
