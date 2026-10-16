@@ -5,6 +5,7 @@ edition = "2024"
 authors = ["Eduard Moldovan"]
 description = "egui in the colours of the Omarchy theme, with defaults where there is none: the theme, and buttons, text fields, a toggle, a slider, item marks and a command palette drawn from it"
 readme = "README.md"
+repository = "https://github.com/edimoldovan/omarchy-kit"
 
 [dependencies]
 egui = "0.33.3"

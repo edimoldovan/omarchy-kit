@@ -14,7 +14,7 @@ of it and is the worked example.
 deliberately:
 
 ```toml
-omarchy-kit = { git = "<this repository's URL>", rev = "<commit>" }
+omarchy-kit = { git = "https://github.com/edimoldovan/omarchy-kit.git", rev = "<commit>" }
 ```
 
 The app's egui must be the kit's version (0.33.3; eframe 0.33.3).
