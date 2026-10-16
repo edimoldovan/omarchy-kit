@@ -40,7 +40,7 @@ exception is a product's own logo, which keeps its own colours.
 ## Widgets
 
 ```rust
-use omarchy_kit::{Button, Choice, CommandPalette, Item, Size, Slider, TextField, Toggle, field};
+use omarchy_kit::{Button, Choice, CommandPalette, Dropdown, Item, Size, Slider, TextField, Toggle, field};
 
 ui.add(Button::new("Send").icon(glyph("send")).primary());
 ui.add(Button::new("Discard"));                                  // secondary is the default
@@ -55,8 +55,14 @@ let search = ui.add(TextField::new(&mut query).icon(glyph("find")).hint("Search"
 let mut chosen = usize::from(unread_only);
 if ui.add(Toggle::new(&mut chosen, &["All", "Unread"])).changed() { /* … */ }
 
-// An amount between two ends: a field filled up to it, dragged anywhere,
-// a double click back to the default.
+// A choice among more than fit together: the chosen one with a chevron,
+// the list below it when clicked. Out of range shows the placeholder.
+let mut mode = 2usize;
+if ui.add(Dropdown::new(&mut mode, &["normal", "multiply", "screen"]).width(160.0)).changed() { /* … */ }
+
+// An amount between two ends: its label above, a knob on a track and a
+// field at the end to type into; Up and Down nudge it while the field has
+// the keyboard; a double click on the track puts the default back.
 if ui.add(Slider::new(&mut opacity, 0.0..=100.0).label("Opacity").default(100.0).decimals(0).suffix("%")).changed() { /* … */ }
 
 // Anything else that should look like a field: chips, a multi-line editor.
@@ -82,10 +88,19 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
 - `TextField`: `.hint`, `.icon`, `.key`, `.small()`, `.width`, `.id_salt`. Its
   response is the text's own — `changed`, `has_focus`, `lost_focus`.
 - `Toggle`: a few choices as one control; `changed()` when the choice moved.
-- `Slider`: `.label`, `.default` (where a double click puts it back),
-  `.decimals` (shown, and the steps it moves in), `.suffix`, `.small()`,
-  `.width`; `changed()` whenever the value moved. The fill runs from zero
-  when the range crosses zero, else from the start.
+- `Dropdown`: `.placeholder` (shown while `selected` is out of range),
+  `.small()`, `.width`, `.id_salt`; `changed()` when the choice moved. The
+  list is as wide as the field, its lines marked like items, the chosen one
+  filled.
+- `Slider`: a track with a knob and a field at its end with the value;
+  `.label` puts the name on a line above. Dragging the track sets it and
+  hands the keyboard to the field; there, Up and Down move a step, Shift
+  ten, Ctrl a hundred, Enter or leaving takes what was typed within the
+  range, Esc puts back what it was. `.default` (a double click on the
+  track puts it back), `.decimals` (shown, and the step), `.suffix` (after
+  the value in its field), `.small()`, `.width`, `.id_salt`; `changed()`
+  whenever the value moved. The fill runs from zero when the range crosses
+  zero, else from the start.
 - `field(ui, size, |ui| (focused, R)) -> R`: the field's fill, corner and focus
   outline around whatever the closure draws.
 - `Item { open, keyed, hovered, size }.paint(ui, rect)`: how a selectable thing
@@ -130,8 +145,8 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
   tooltip names the key; the key is also at the end of the palette's field.
 - Tooltips name the key a control is on, read from the app's keymap rather
   than typed into the text: `"Settings  (Home)"`.
-- A picker is a `Button` with `.hint("▾")` and a `Popup::menu` of quiet
-  buttons, `.selected` on the current one.
+- A choice among more than a `Toggle` holds is a `Dropdown`; never a
+  `Button` with a popup of buttons, and never egui's `ComboBox`.
 - No egui `Button`, `small_button`, `selectable_label`, `ComboBox` or framed
   `TextEdit` in an app that uses the kit, and no hand-painted buttons. What the
   kit lacks gets added to the kit — `crates/omarchy-kit` — with a test, so

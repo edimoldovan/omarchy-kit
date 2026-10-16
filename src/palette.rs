@@ -28,8 +28,8 @@ pub struct CommandPalette {
     at: usize,
 }
 
-/// Room between the palette's edge and what is in it.
-const MARGIN: f32 = 8.0;
+/// Room between a palette's or a list's edge and what is in it.
+pub(crate) const MARGIN: f32 = 8.0;
 
 impl CommandPalette {
     pub fn is_open(&self) -> bool {
@@ -77,7 +77,7 @@ impl CommandPalette {
         let area = Modal::default_area(id).anchor(Align2::CENTER_TOP, Vec2::new(0.0, screen.height().min(800.0) * 0.12));
         let mut chosen = None;
 
-        let shown = Modal::new(id).area(area).frame(frame(ctx)).show(ctx, |ui| {
+        let shown = Modal::new(id).area(area).frame(popup_frame(ctx)).show(ctx, |ui| {
             ui.set_width(width);
             let field = ui.add(TextField::new(&mut self.query).hint("Type what to do").key(key).id_salt(id));
             field.request_focus();
@@ -118,9 +118,9 @@ impl CommandPalette {
     }
 }
 
-/// The palette's own card: the window's fill, a hairline, and a corner that
-/// keeps the lines inside it concentric.
-fn frame(ctx: &Context) -> Frame {
+/// The card a palette or a dropdown's list sits on: the window's fill, a
+/// hairline, and a corner that keeps the lines inside it concentric.
+pub(crate) fn popup_frame(ctx: &Context) -> Frame {
     let style = ctx.style();
     let v = &style.visuals;
     Frame::popup(&style)

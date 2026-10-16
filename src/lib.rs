@@ -10,6 +10,7 @@
 //!   sizes, with an optional icon and key hint;
 //! - [`TextField`], and [`field`] for a field that holds more than text;
 //! - [`Toggle`]: a choice of a few, shown together;
+//! - [`Dropdown`]: a choice among more than fit together, in a list below;
 //! - [`Slider`]: an amount between two ends, dragged;
 //! - [`Item`]: how a row, a sidebar entry or a card is marked — open, under the
 //!   pointer, where the keyboard is;
@@ -24,6 +25,7 @@
 pub mod theme;
 
 mod button;
+mod dropdown;
 mod field;
 mod item;
 mod palette;
@@ -31,6 +33,7 @@ mod slider;
 mod toggle;
 
 pub use button::{Button, Kind};
+pub use dropdown::Dropdown;
 pub use field::{TextField, field};
 pub use item::Item;
 pub use palette::{Choice, CommandPalette};
