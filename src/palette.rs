@@ -2,7 +2,7 @@
 
 use egui::{
     Align2, Context, FontId, Frame, Id, Key, Modal, Modifiers, Pos2, Rect, RichText, ScrollArea,
-    Sense, Stroke, Ui, Vec2,
+    Sense, Stroke, Ui, Vec2, WidgetInfo, WidgetType,
 };
 
 use crate::{Ink, Item, Size, TextField};
@@ -140,6 +140,7 @@ fn line(ui: &mut Ui, choice: &Choice, keyed: bool, follow: bool) -> bool {
     if follow {
         response.scroll_to_me(None);
     }
+    response.widget_info(|| WidgetInfo::selected(WidgetType::SelectableLabel, true, keyed, &choice.label));
     Item { open: false, keyed, hovered: response.hovered(), size }.paint(ui, rect);
     let painter = ui.painter();
     let mut end = rect.right() - size.pad();

@@ -73,7 +73,16 @@ impl Dialog {
         let width = self.width.min(ctx.content_rect().width() - 2.0 * (16.0 + MARGIN));
         let resizable = self.resizable;
         let title = self.title.clone();
+        let modal = self.modal;
         let body = |ui: &mut Ui| -> R {
+            // To a screen reader and a test, a dialog named by its title.
+            ui.ctx().accesskit_node_builder(ui.id(), |node| {
+                node.set_role(egui::accesskit::Role::Dialog);
+                node.set_label(title.as_str());
+                if modal {
+                    node.set_modal();
+                }
+            });
             if resizable.is_none() {
                 ui.set_width(width);
             }
@@ -84,8 +93,9 @@ impl Dialog {
                         crate::cross(painter, rect.center(), rect.width() * 0.32, colour);
                     })
                     .quiet()
-                    .small();
-                    if ui.add(close).on_hover_text("Close").clicked() {
+                    .small()
+                    .tip("Close");
+                    if ui.add(close).clicked() {
                         closed = true;
                     }
                 });

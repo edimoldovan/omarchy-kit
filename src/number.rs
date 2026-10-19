@@ -11,13 +11,15 @@ use crate::{Size, TextField};
 /// the keyboard, Up and Down move it a step, Shift ten steps, Ctrl a
 /// hundred; Enter, or leaving the field, takes what was typed, within the
 /// range; Esc puts back what it was when the field took the keyboard.
-/// `changed()` whenever the number moved.
+/// `changed()` whenever the number moved. A spin button to a screen reader
+/// and a test, with the number as its value.
 #[must_use = "a number field is drawn with ui.add(field)"]
 pub struct NumberField<'a> {
     value: &'a mut f32,
     range: RangeInclusive<f32>,
     decimals: usize,
     suffix: String,
+    name: String,
     size: Size,
     width: f32,
     id: Option<Id>,
@@ -30,6 +32,7 @@ impl<'a> NumberField<'a> {
             range,
             decimals: 0,
             suffix: String::new(),
+            name: String::new(),
             size: Size::default(),
             width: 88.0,
             id: None,
@@ -45,6 +48,12 @@ impl<'a> NumberField<'a> {
     /// Text after the number in its field: a unit, a percent sign.
     pub fn suffix(mut self, suffix: impl Into<String>) -> NumberField<'a> {
         self.suffix = suffix.into();
+        self
+    }
+
+    /// Its name to a screen reader and a test.
+    pub fn name(mut self, name: impl Into<String>) -> NumberField<'a> {
+        self.name = name.into();
         self
     }
 
@@ -126,7 +135,7 @@ impl Widget for NumberField<'_> {
         } else {
             format(value, self.decimals)
         };
-        let mut field = TextField::new(&mut text).width(self.width).size(self.size).id_salt(field_id);
+        let mut field = TextField::new(&mut text).name(&self.name).width(self.width).size(self.size).id_salt(field_id);
         if !self.suffix.is_empty() {
             field = field.key(self.suffix.trim());
         }
@@ -152,6 +161,10 @@ impl Widget for NumberField<'_> {
             *self.value = value;
             edit.mark_changed();
         }
+        edit.ctx.accesskit_node_builder(edit.id, |node| {
+            node.set_role(egui::accesskit::Role::SpinButton);
+            node.set_numeric_value(f64::from(value));
+        });
         edit
     }
 }

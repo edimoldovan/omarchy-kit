@@ -3,7 +3,7 @@
 
 use egui::{
     FontId, Id, Key, Margin, Pos2, Rect, Response, RichText, Sense, Stroke, TextEdit, Ui, Vec2,
-    Widget,
+    Widget, WidgetInfo, WidgetType,
 };
 
 use crate::field::framed;
@@ -21,7 +21,8 @@ const TYPING: f32 = 120.0;
 /// separators ends it, and on Enter, Tab or leaving the field — whenever
 /// `accept` takes it; what it does not take stays typed, to be put right.
 /// Backspace with nothing typed takes the last tag back, and each tag's ×
-/// takes it off. The same tag twice, in any case, is one.
+/// takes it off. The same tag twice, in any case, is one. To a screen reader
+/// and a test each tag is a label, and its × a button: "Take ale@acme.com off".
 #[must_use = "a tag field is drawn with ui.add(field)"]
 pub struct TagField<'a> {
     tags: &'a mut Vec<String>,
@@ -29,6 +30,7 @@ pub struct TagField<'a> {
     accept: Box<dyn Fn(&str) -> bool + 'a>,
     separators: Vec<char>,
     hint: String,
+    name: String,
     size: Size,
     width: Option<f32>,
     id: Option<Id>,
@@ -42,6 +44,7 @@ impl<'a> TagField<'a> {
             accept: Box::new(|_| true),
             separators: vec![',', ';'],
             hint: String::new(),
+            name: String::new(),
             size: Size::default(),
             width: None,
             id: None,
@@ -65,6 +68,12 @@ impl<'a> TagField<'a> {
     /// What it says while it holds nothing.
     pub fn hint(mut self, hint: impl Into<String>) -> TagField<'a> {
         self.hint = hint.into();
+        self
+    }
+
+    /// Its name to a screen reader and a test; the hint when unset.
+    pub fn name(mut self, name: impl Into<String>) -> TagField<'a> {
+        self.name = name.into();
         self
     }
 
@@ -107,7 +116,8 @@ impl Widget for TagField<'_> {
     /// `request_focus` work on the field; `changed` also when a tag came or
     /// went.
     fn ui(self, ui: &mut Ui) -> Response {
-        let TagField { tags, typing, accept, separators, hint, size, width, id } = self;
+        let TagField { tags, typing, accept, separators, hint, name, size, width, id } = self;
+        let name = if name.is_empty() { hint.clone() } else { name };
         let ink = Ink::of(ui);
         let tall = tag_height(size);
         let inner = width.unwrap_or_else(|| ui.available_width()) - 2.0 * (INSET + 1.0);
@@ -122,7 +132,7 @@ impl Widget for TagField<'_> {
                     ui.set_row_height(tall);
                     ui.spacing_mut().item_spacing = Vec2::splat(INSET);
                     for (i, text) in tags.iter().enumerate() {
-                        if tag(ui, text, size, base.with(i)) {
+                        if tag(ui, text, size, base.with(("tag", i))) {
                             dropped = Some(i);
                         }
                     }
@@ -143,7 +153,11 @@ impl Widget for TagField<'_> {
                     if let Some(id) = id {
                         edit = edit.id(id);
                     }
-                    ui.add(edit)
+                    let edit = ui.add(edit);
+                    if !name.is_empty() {
+                        crate::name(&edit, &name);
+                    }
+                    edit
                 })
                 .inner;
             (edit.has_focus(), edit)
@@ -181,9 +195,11 @@ fn tag(ui: &mut Ui, text: &str, size: Size, id: Id) -> bool {
     let tall = tag_height(size);
     let galley = ui.painter().layout_no_wrap(text.to_string(), FontId::proportional(size.text() - 1.5), ink.fg);
     let pad = size.pad() - INSET;
-    let (rect, _) = ui.allocate_exact_size(Vec2::new(pad + galley.size().x + tall, tall), Sense::hover());
+    let (rect, shown) = ui.allocate_exact_size(Vec2::new(pad + galley.size().x + tall, tall), Sense::hover());
+    shown.widget_info(|| WidgetInfo::labeled(WidgetType::Label, true, text));
     let cross = Rect::from_min_size(Pos2::new(rect.right() - tall, rect.top()), Vec2::splat(tall));
     let x = ui.interact(cross, id, Sense::click()).on_hover_text("Take it off");
+    x.widget_info(|| WidgetInfo::labeled(WidgetType::Button, true, format!("Take {text} off")));
 
     let painter = ui.painter();
     painter.rect_filled(rect, Size::Small.radius(), ink.selected);

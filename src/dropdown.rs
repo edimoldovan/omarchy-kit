@@ -1,7 +1,7 @@
 //! The dropdown: the choice made, with a chevron after it, and all the
 //! choices in a list below it while it is open.
 
-use egui::{Align2, FontId, Id, Popup, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, Widget};
+use egui::{Align2, FontId, Id, Popup, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, Widget, WidgetInfo, WidgetType};
 
 use crate::{Ink, Item, Size};
 
@@ -14,6 +14,7 @@ pub struct Dropdown<'a> {
     selected: &'a mut usize,
     options: &'a [&'a str],
     placeholder: String,
+    name: String,
     size: Size,
     width: Option<f32>,
     id: Option<Id>,
@@ -22,12 +23,19 @@ pub struct Dropdown<'a> {
 impl<'a> Dropdown<'a> {
     /// `selected` out of range shows the placeholder: nothing chosen yet.
     pub fn new(selected: &'a mut usize, options: &'a [&'a str]) -> Dropdown<'a> {
-        Dropdown { selected, options, placeholder: String::new(), size: Size::default(), width: None, id: None }
+        Dropdown { selected, options, placeholder: String::new(), name: String::new(), size: Size::default(), width: None, id: None }
     }
 
     /// What it says while nothing is chosen.
     pub fn placeholder(mut self, placeholder: impl Into<String>) -> Dropdown<'a> {
         self.placeholder = placeholder.into();
+        self
+    }
+
+    /// Its name to a screen reader and a test; the placeholder when unset.
+    /// The chosen option is its value.
+    pub fn name(mut self, name: impl Into<String>) -> Dropdown<'a> {
+        self.name = name.into();
         self
     }
 
@@ -99,6 +107,8 @@ impl Widget for Dropdown<'_> {
             let line = Size::Small;
             for (i, option) in self.options.iter().enumerate() {
                 let (row, hit) = ui.allocate_exact_size(Vec2::new(inner, line.height()), Sense::click());
+                let open = i == *self.selected;
+                hit.widget_info(|| WidgetInfo::selected(WidgetType::SelectableLabel, true, open, option));
                 Item { open: i == *self.selected, keyed: false, hovered: hit.hovered(), size: line }.paint(ui, row);
                 ui.painter().text(
                     Pos2::new(row.left() + line.pad(), row.center().y),
@@ -118,6 +128,15 @@ impl Widget for Dropdown<'_> {
             *self.selected = i;
             response.mark_changed();
         }
+        let name = if self.name.is_empty() { &self.placeholder } else { &self.name };
+        let value = self.options.get(*self.selected).map(|option| option.to_string());
+        let enabled = ui.is_enabled();
+        response.widget_info(|| WidgetInfo {
+            enabled,
+            label: (!name.is_empty()).then(|| name.clone()),
+            current_text_value: value.clone(),
+            ..WidgetInfo::new(WidgetType::ComboBox)
+        });
         response
     }
 }

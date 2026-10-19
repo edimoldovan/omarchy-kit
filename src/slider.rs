@@ -3,7 +3,7 @@
 
 use std::ops::RangeInclusive;
 
-use egui::{Align2, FontId, Id, Key, Modifiers, Pos2, Rect, Response, Sense, Stroke, Ui, Vec2, Widget};
+use egui::{Align2, FontId, Id, Key, Modifiers, Pos2, Rect, Response, Sense, Stroke, Ui, Vec2, Widget, WidgetInfo};
 
 use crate::{Ink, Size, TextField};
 
@@ -40,6 +40,7 @@ pub struct Slider<'a> {
     value: &'a mut f32,
     range: RangeInclusive<f32>,
     label: String,
+    name: String,
     default: Option<f32>,
     decimals: usize,
     suffix: String,
@@ -54,6 +55,7 @@ impl<'a> Slider<'a> {
             value,
             range,
             label: String::new(),
+            name: String::new(),
             default: None,
             decimals: 2,
             suffix: String::new(),
@@ -66,6 +68,13 @@ impl<'a> Slider<'a> {
     /// What the amount is, on a line above the track.
     pub fn label(mut self, label: impl Into<String>) -> Slider<'a> {
         self.label = label.into();
+        self
+    }
+
+    /// Its name to a screen reader and a test; the label when unset. The
+    /// amount is its value.
+    pub fn name(mut self, name: impl Into<String>) -> Slider<'a> {
+        self.name = name.into();
         self
     }
 
@@ -228,6 +237,9 @@ impl Widget for Slider<'_> {
             *self.value = value;
             response.mark_changed();
         }
+        let enabled = ui.is_enabled();
+        let name = if self.name.is_empty() { &self.label } else { &self.name };
+        track.widget_info(|| WidgetInfo::slider(enabled, f64::from(value), name));
 
         if ui.is_rect_visible(rect) {
             let painter = ui.painter();

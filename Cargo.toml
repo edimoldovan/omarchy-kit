@@ -8,5 +8,8 @@ readme = "README.md"
 repository = "https://github.com/edimoldovan/omarchy-kit"
 
 [dependencies]
-egui = "0.33.3"
+egui = { version = "0.33.3", features = ["accesskit"] }
 toml = "1.1.4"
+
+[dev-dependencies]
+egui_kittest = "0.33.3"

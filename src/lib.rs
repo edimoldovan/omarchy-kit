@@ -133,6 +133,12 @@ pub(crate) fn cross(painter: &egui::Painter, centre: egui::Pos2, arm: f32, colou
     painter.line_segment([centre - b, centre + b], stroke);
 }
 
+/// Names what egui already reports for `response` — a text box, which egui
+/// leaves nameless — keeping the role and value it gave.
+pub(crate) fn name(response: &egui::Response, name: &str) {
+    response.ctx.accesskit_node_builder(response.id, |node| node.set_label(name));
+}
+
 /// Text that reads on `fill`: white on a dark colour, near-black on a light
 /// one.
 pub fn on(fill: Color32) -> Color32 {

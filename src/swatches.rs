@@ -1,7 +1,10 @@
 //! Colour swatches: the standard colours as a grid to pick from, and the
 //! button that opens them.
 
-use egui::{Color32, Id, Painter, Popup, Pos2, Rect, Response, RichText, Sense, Stroke, StrokeKind, Ui, Vec2, Widget};
+use egui::{
+    Color32, Id, Painter, Popup, Pos2, Rect, Response, RichText, Sense, Stroke, StrokeKind, Ui, Vec2, Widget, WidgetInfo,
+    WidgetType,
+};
 
 use crate::{Button, Ink, Size, TextField};
 
@@ -169,6 +172,7 @@ fn squares(ui: &mut Ui, row: &[Color32], chosen: Option<Color32>) -> Option<Colo
     ui.horizontal(|ui| {
         for &c in row {
             let (rect, response) = ui.allocate_exact_size(Vec2::splat(SQUARE), Sense::click());
+            response.widget_info(|| WidgetInfo::selected(WidgetType::ColorButton, true, chosen == Some(c), hex(c)));
             let painter = ui.painter();
             painter.rect_filled(rect, radius, c);
             painter.rect_stroke(rect, radius, Stroke::new(1.0_f32, ink.shade(0.28)), StrokeKind::Inside);
@@ -188,11 +192,14 @@ fn squares(ui: &mut Ui, row: &[Color32], chosen: Option<Color32>) -> Option<Colo
 type Icon<'a> = Box<dyn Fn(&Painter, Rect, Color32) + 'a>;
 
 /// A quiet button with the colour it applies under its icon, opening the
-/// swatches below it; a pick closes them, and `changed()` says so.
+/// swatches below it; a pick closes them, and `changed()` says so. To a
+/// screen reader and a test it is named by its tip, with the colour's hex as
+/// its value; each swatch is named by its hex.
 #[must_use = "a colour button is drawn with ui.add(button)"]
 pub struct ColorButton<'a> {
     colour: &'a mut Option<Color32>,
     icon: Icon<'a>,
+    tip: String,
     clear: Option<String>,
     recent: &'a [Color32],
     size: Size,
@@ -200,7 +207,13 @@ pub struct ColorButton<'a> {
 
 impl<'a> ColorButton<'a> {
     pub fn new(colour: &'a mut Option<Color32>, icon: impl Fn(&Painter, Rect, Color32) + 'a) -> ColorButton<'a> {
-        ColorButton { colour, icon: Box::new(icon), clear: None, recent: &[], size: Size::default() }
+        ColorButton { colour, icon: Box::new(icon), tip: String::new(), clear: None, recent: &[], size: Size::default() }
+    }
+
+    /// What it says while the pointer is on it, and its name.
+    pub fn tip(mut self, tip: impl Into<String>) -> ColorButton<'a> {
+        self.tip = tip.into();
+        self
     }
 
     /// The swatches' entry for no colour, and what it says.
@@ -227,9 +240,13 @@ impl<'a> ColorButton<'a> {
 
 impl Widget for ColorButton<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
-        let ColorButton { colour, icon, clear, recent, size } = self;
+        let ColorButton { colour, icon, tip, clear, recent, size } = self;
         let ink = Ink::of(ui);
-        let mut response = ui.add(Button::icon_only(icon).quiet().size(size));
+        let mut button = Button::icon_only(icon).quiet().size(size);
+        if !tip.is_empty() {
+            button = button.tip(tip);
+        }
+        let mut response = ui.add(button);
         // The colour, as a bar under the icon; an outline when there is none.
         let bar = Rect::from_center_size(
             Pos2::new(response.rect.center().x, response.rect.center().y + size.icon() / 2.0 + 1.5),
@@ -257,6 +274,11 @@ impl Widget for ColorButton<'_> {
         if picked {
             response.mark_changed();
         }
+        let value = colour.map(hex);
+        response.ctx.accesskit_node_builder(response.id, |node| match value {
+            Some(value) => node.set_value(value),
+            None => node.clear_value(),
+        });
         response
     }
 }

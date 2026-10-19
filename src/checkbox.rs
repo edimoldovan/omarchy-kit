@@ -1,6 +1,6 @@
 //! The checkbox: one thing on or off, with what it is beside it.
 
-use egui::{FontId, Pos2, Rect, Response, Sense, Stroke, StrokeKind, Ui, Vec2, Widget};
+use egui::{FontId, Pos2, Rect, Response, Sense, Stroke, StrokeKind, Ui, Vec2, Widget, WidgetInfo, WidgetType};
 
 use crate::{Ink, Size, on};
 
@@ -52,6 +52,8 @@ impl Widget for Checkbox<'_> {
             *self.checked = !*self.checked;
             response.mark_changed();
         }
+        let checked = *self.checked;
+        response.widget_info(|| WidgetInfo::selected(WidgetType::Checkbox, enabled, checked, &self.label));
         if !ui.is_rect_visible(rect) {
             return response;
         }

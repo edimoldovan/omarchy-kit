@@ -49,7 +49,7 @@ use omarchy_kit::{Button, Checkbox, Choice, ColorButton, CommandPalette, Dialog,
 ui.add(Button::new("Send").icon(glyph("send")).primary());
 ui.add(Button::new("Discard"));                                  // secondary is the default
 ui.add(Button::new("Reply").icon(glyph("reply")).hint("R").quiet());
-ui.add(Button::icon_only(glyph("back")).quiet()).on_hover_text("Back");
+ui.add(Button::icon_only(glyph("back")).quiet().tip("Back")); // the tip is its name
 ui.add(Button::new("Remove").danger());
 ui.add(Button::new("Compose").primary().large().width(ui.available_width()));
 ui.add(Button::icon_only(glyph("gear")).quiet().selected(on_settings));
@@ -207,7 +207,14 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
   The way to it is a quiet keyboard button beside the settings gear, whose
   tooltip names the key; the key is also at the end of the palette's field.
 - Tooltips name the key a control is on, read from the app's keymap rather
-  than typed into the text: `"Settings  (Home)"`.
+  than typed into the text: `"Settings  (Home)"` — on an icon-only button,
+  `.tip("Settings").hint(key)`, which keeps the key out of its name.
+- Every control has a name, so a screen reader reads it and an egui_kittest
+  test finds it with `get_by_role_and_label`: a button by its label, an
+  icon-only one by its `.tip(…)`, a checkbox, slider or toggle option by its
+  label, a dialog by its title. What shows no text of its own — a slider
+  without a label, a field labelled beside it, a `NumberField`, a `Dropdown` —
+  gets `.name(…)`. A text field without one is named by its hint.
 - A choice among more than a `Toggle` holds is a `Dropdown`; never a
   `Button` with a popup of buttons, and never egui's `ComboBox`.
 - No egui `Button`, `small_button`, `selectable_label`, `checkbox`, `radio`, `DragValue`, `Window`, `ComboBox` or framed

@@ -2,6 +2,7 @@
 
 use egui::{
     Align2, Color32, CornerRadius, FontId, Painter, Pos2, Rect, Response, Sense, Ui, Vec2, Widget,
+    WidgetInfo, WidgetType,
 };
 
 use crate::{Ink, Size, on};
@@ -31,6 +32,7 @@ pub struct Button<'a> {
     label: Option<String>,
     icon: Option<Icon<'a>>,
     hint: Option<String>,
+    tip: Option<String>,
     kind: Kind,
     size: Size,
     selected: bool,
@@ -45,6 +47,7 @@ impl<'a> Button<'a> {
             label: Some(label.into()),
             icon: None,
             hint: None,
+            tip: None,
             kind: Kind::default(),
             size: Size::default(),
             selected: false,
@@ -72,6 +75,15 @@ impl<'a> Button<'a> {
     pub fn hint(mut self, hint: impl Into<String>) -> Button<'a> {
         let hint = hint.into();
         self.hint = (!hint.is_empty()).then_some(hint);
+        self
+    }
+
+    /// What it says while the pointer is on it, and its name to a screen
+    /// reader and a test when it shows no label. On an icon-only button the
+    /// key from `hint` goes in the tip, `"Settings  (Home)"`, rather than
+    /// beside the icon; its name stays `"Settings"`.
+    pub fn tip(mut self, tip: impl Into<String>) -> Button<'a> {
+        self.tip = Some(tip.into());
         self
     }
 
@@ -141,7 +153,9 @@ impl Widget for Button<'_> {
         };
         let gap = 7.0;
         let label_w = self.label.as_deref().map_or(0.0, |label| measure(label, &font));
-        let hint_w = self.hint.as_deref().map_or(0.0, |hint| measure(hint, &small) + gap);
+        // An icon-only button has no room for its key: the key is in its tip.
+        let hint = self.hint.as_deref().filter(|_| self.label.is_some());
+        let hint_w = hint.map_or(0.0, |hint| measure(hint, &small) + gap);
         let icon_w = if self.icon.is_some() { size.icon() } else { 0.0 };
         let between = if self.icon.is_some() && self.label.is_some() { gap } else { 0.0 };
         let content = icon_w + between + label_w + hint_w;
@@ -150,8 +164,21 @@ impl Widget for Button<'_> {
             (None, None) => size.height(),
             (None, Some(_)) => content + 2.0 * size.pad(),
         };
-        let (rect, response) =
+        let (rect, mut response) =
             ui.allocate_exact_size(Vec2::new(width, size.height()), Sense::click());
+        let enabled = ui.is_enabled();
+        let name = self.label.clone().or_else(|| self.tip.clone()).unwrap_or_default();
+        response.widget_info(|| WidgetInfo {
+            enabled,
+            label: (!name.is_empty()).then(|| name.clone()),
+            ..WidgetInfo::new(WidgetType::Button)
+        });
+        if let Some(tip) = &self.tip {
+            response = match (&self.label, &self.hint) {
+                (None, Some(key)) => response.on_hover_text(format!("{tip}  ({key})")),
+                _ => response.on_hover_text(tip),
+            };
+        }
         if !ui.is_rect_visible(rect) {
             return response;
         }
@@ -159,7 +186,6 @@ impl Widget for Button<'_> {
         let hovered = response.hovered();
         let pressed = response.is_pointer_button_down_on();
         let (fill, text) = colours(self.kind, &ink, hovered, pressed, self.selected);
-        let enabled = ui.is_enabled();
         let fade = |c: Color32| if enabled { c } else { c.gamma_multiply(0.45) };
         let painter = ui.painter();
         if fill != Color32::TRANSPARENT {
@@ -181,7 +207,7 @@ impl Widget for Button<'_> {
             painter.text(Pos2::new(x, y), Align2::LEFT_CENTER, label, font, fade(text));
             x += label_w;
         }
-        if let Some(hint) = &self.hint {
+        if let Some(hint) = hint {
             painter.text(
                 Pos2::new(x + gap, y),
                 Align2::LEFT_CENTER,

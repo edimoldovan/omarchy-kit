@@ -53,6 +53,7 @@ pub(crate) fn framed<R>(
 pub struct TextField<'a> {
     text: &'a mut String,
     hint: String,
+    name: String,
     icon: Option<Icon<'a>>,
     key: Option<String>,
     size: Size,
@@ -65,6 +66,7 @@ impl<'a> TextField<'a> {
         TextField {
             text,
             hint: String::new(),
+            name: String::new(),
             icon: None,
             key: None,
             size: Size::default(),
@@ -76,6 +78,12 @@ impl<'a> TextField<'a> {
     /// What it says while it is empty.
     pub fn hint(mut self, hint: impl Into<String>) -> TextField<'a> {
         self.hint = hint.into();
+        self
+    }
+
+    /// Its name to a screen reader and a test; the hint when unset.
+    pub fn name(mut self, name: impl Into<String>) -> TextField<'a> {
+        self.name = name.into();
         self
     }
 
@@ -130,6 +138,7 @@ impl Widget for TextField<'_> {
         });
         let icon_w = if self.icon.is_some() { size.icon() + gap } else { 0.0 };
         let text_w = (outer - 2.0 * size.pad() - 2.0 - icon_w - key_w).max(24.0);
+        let name = if self.name.is_empty() { self.hint.clone() } else { self.name };
         let (icon, key, hint, text) = (self.icon, self.key, self.hint, self.text);
         let id = self.id;
         field(ui, size, |ui| {
@@ -150,6 +159,9 @@ impl Widget for TextField<'_> {
                         edit = edit.id(id);
                     }
                     let edit = ui.add(edit);
+                    if !name.is_empty() {
+                        crate::name(&edit, &name);
+                    }
                     if let Some(key) = &key {
                         ui.label(RichText::new(key).font(key_font).color(ink.weak));
                     }

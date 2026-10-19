@@ -106,13 +106,16 @@ use omarchy_kit::Button;
 ui.add(Button::new("Send").icon(glyph("send")).primary());
 ui.add(Button::new("Discard"));
 ui.add(Button::new("Reply").icon(glyph("reply")).hint("R").quiet());
-ui.add(Button::icon_only(glyph("back")).quiet()).on_hover_text("Back");
+ui.add(Button::icon_only(glyph("back")).quiet().tip("Back"));
 ui.add(Button::new("Compose").primary().large().width(ui.available_width()));
 ui.add(Button::icon_only(glyph("gear")).quiet().selected(on_settings));
 ```
 
 - `.icon(glyph)` puts the app's icon before the label; `Button::icon_only`
-  is the icon alone — give it a tooltip with its name.
+  is the icon alone — give it `.tip(name)`.
+- `.tip(text)` is what it says while the pointer is on it. On an icon-only
+  button it is also the button's name, and `.hint(key)` goes in the tip —
+  `"Settings  (Home)"` — rather than beside the icon.
 - `.hint(key)` shows the key it is also on, quietly after the label.
 - `.selected(true)` marks the quiet tool whose screen is showing.
 - `.bar(Some(colour))` puts a bar of that colour along its bottom edge: the
@@ -400,6 +403,39 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
 - The way to it is a quiet keyboard button beside the settings gear, whose
   tooltip names the key; the key is also at the end of the palette's field.
 
+## Names
+
+Every element reports its role, its name and its value to AccessKit, so a
+screen reader reads it and an [egui_kittest](https://crates.io/crates/egui_kittest)
+test finds it by name:
+
+```rust
+harness.get_by_role_and_label(Role::Slider, "Brightness");
+harness.get_by_role_and_label(Role::Button, "Settings").click();
+```
+
+| Element | Role | Name | Value |
+|---|---|---|---|
+| Button | Button | its label; its `.tip()` when icon-only | — |
+| Checkbox | CheckBox | its label | on or off |
+| Toggle | a RadioButton per option | the option | the chosen one on |
+| Slider | Slider | `.name()`, else its label | the amount |
+| Dropdown | ComboBox; each line of the open list a Button | `.name()`, else the placeholder | the chosen option |
+| TextField, TagField | TextInput | `.name()`, else the hint | the text |
+| A TagField's tags | a Label, and a Button for its × | the tag; `"Take ale@acme.com off"` | — |
+| NumberField | SpinButton | `.name()` | the number |
+| Swatches | a ColorWell per swatch | its hex, `"#FF0000"` | the chosen one on |
+| ColorButton | Button | its `.tip()` | the colour's hex |
+| Dialog | Dialog, modal unless `.modeless()`; its × a Button | its title; `"Close"` | — |
+| CommandPalette | its field a TextInput; each action a Button | `"Type what to do"`; the action's label | the keyboard's one on |
+
+- What shows no text of its own is named with `.name(…)`: a slider without a
+  label, a field the app labels beside it. An icon-only button is named by
+  its `.tip(…)`.
+- The key in a tip is not part of the name: `.tip("Settings").hint("Home")`
+  shows `"Settings  (Home)"` and is named `"Settings"`.
+- The kit turns on egui's `accesskit` feature; eframe has it on by default.
+
 ## Across the kit
 
 - Icons: `icons::draw(painter, rect, name, colour)` draws one of the shared
@@ -409,7 +445,8 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
   icon has one stroke weight and one size. An element takes any
   `Fn(&Painter, Rect, Color32)` as its icon.
 - Tooltips name the key a control is on, read from the app's keymap rather
-  than typed into the text: `"Settings  (Home)"`.
+  than typed into the text: `"Settings  (Home)"` — on an icon-only button,
+  `.tip("Settings").hint(key)`.
 - No egui `Button`, `small_button`, `selectable_label`, `ComboBox` or framed
   `TextEdit` in an app that uses the kit, and no hand-painted controls. What
   the kit lacks is added here, with a test, so every app gets it.
