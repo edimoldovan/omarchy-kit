@@ -279,9 +279,11 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
 
 ## Across the kit
 
-- Icons are the app's own: anything `Fn(&Painter, Rect, Color32)`, drawn in
-  the square and the colour the element hands it. The kit draws only its own
-  marks, such as a tag's × and a dropdown's chevron.
+- Icons: `icons::draw(painter, rect, name, colour)` draws one of the shared
+  glyphs — trash, open, find, save, undo, redo and the rest — centred in
+  `rect`. An app draws its own glyphs with the same `icons::Pen`, so every
+  icon has one stroke weight and one size. An element takes any
+  `Fn(&Painter, Rect, Color32)` as its icon.
 - Tooltips name the key a control is on, read from the app's keymap rather
   than typed into the text: `"Settings  (Home)"`.
 - No egui `Button`, `small_button`, `selectable_label`, `ComboBox` or framed

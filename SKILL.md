@@ -131,8 +131,11 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
   what is typed (each with its own key at the end of its line), ↑↓ to walk
   them, Enter or a click to run one, Esc or a click beside it to close. It
   closes itself when one is run. `Choice { label, key: Option<String> }`.
-- Icons are the app's own: anything `Fn(&Painter, Rect, Color32)`, drawn in the
-  square and colour the widget hands it. Post's `icons::glyph(name)` is one.
+- Icons: `icons::draw(painter, rect, name, colour)` draws one of the shared
+  glyphs (trash, open, find, save, undo, redo, …) centred in `rect`; an app
+  draws its own glyphs with the same `icons::Pen`, so every icon has one
+  stroke weight and size. An element takes any `Fn(&Painter, Rect, Color32)`
+  as its icon.
 - `omarchy_kit::on(fill)` is the text colour that reads on a fill.
 
 ## How to use them
