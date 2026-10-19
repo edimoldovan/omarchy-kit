@@ -35,6 +35,7 @@ Post, Grido and omarchy-kit are made together:
 | [`Dialog`](#dialog) | A card over the window, or a panel beside the work | Asking for something: Go to, Find, Format cells |
 | [`StatusLine`](#statusline) | The line along the bottom of a window | Where the app is, and what just happened |
 | [`CommandPalette`](#commandpalette) | Every action, found by typing, each with its key | An app's actions and the keys they are on |
+| [`MenuBar`](#menus) · [`context_menu`](#menus) | Menus of lines, each with its key, from a bar or a right-click | A window's menu bar; what a right-click on something offers |
 
 Under all of them: [the theme](#the-theme), and [`Size`](#sizes-and-corners) —
 one height, one corner and one type size, shared by every element so they
@@ -515,6 +516,47 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
 - The way to it is a quiet keyboard button beside the settings gear, whose
   tooltip names the key; the key is also at the end of the palette's field.
 
+## Menus
+
+The menu bar along a window's top, and the menu a right-click opens: the
+same lines in both, each with its label on the left and its key, dim, on the
+right.
+
+```rust
+use omarchy_kit::{MenuBar, context_menu};
+
+MenuBar::new().show(ui, |bar| {
+    bar.menu("File", |m| {
+        if m.item("Save").key("Ctrl+S").enabled(dirty).clicked() { /* … */ }
+        m.separator();
+        m.check("Snapping", &mut snapping);
+        m.submenu("Export", |m| {
+            if m.item("Movie…").key("Ctrl+M").clicked() { /* … */ }
+        });
+    });
+    bar.menu("Edit", |m| { /* … */ });
+});
+
+let clip = ui.add(/* … */);
+context_menu(&clip, |m| {
+    if m.item("Split").key("S").clicked() { /* … */ }
+});
+```
+
+- `m.item(label)` runs something: `.key(k)`, `.enabled(b)`, and
+  `.clicked()`, which draws it and is true when it was run.
+- `m.check(label, &mut bool)` has a tick while on, and turns it over when
+  run. A menu with such a line keeps a column for the ticks.
+- `m.separator()` divides groups of lines; `m.submenu(label, |m| …)` opens a
+  menu of its own beside its line.
+- A click on a menu's name opens it; with one open, moving onto another name
+  opens that one. A click on a line runs it and closes every open menu; a
+  press anywhere else closes them.
+- The keyboard: Up and Down walk the lines, past separators and disabled
+  lines; Enter runs one; Right and Left go into and out of a submenu, and
+  across the bar; Esc closes them all.
+- A line is named by its label; its key is its keyboard shortcut, apart.
+
 ## Names
 
 Every element reports its role, its name and its value to AccessKit, so a
@@ -542,6 +584,8 @@ harness.get_by_role_and_label(Role::Button, "Settings").click();
 | ColorButton | Button | its `.tip()` | the colour's hex |
 | Dialog | Dialog, modal unless `.modeless()`; its × a Button | its title; `"Close"` | — |
 | CommandPalette | its field a TextInput; each action a Button | `"Type what to do"`; the action's label | the keyboard's one on |
+| MenuBar | a MenuBar; each menu's name a MenuItem | the menu's name | open or not |
+| A menu's lines | MenuItem, or MenuItemCheckBox for `check` | the label; the key is its keyboard shortcut | checked or not; a submenu open or not |
 
 - What shows no text of its own is named with `.name(…)`: a slider without a
   label, a field the app labels beside it. An icon-only button is named by
@@ -573,6 +617,7 @@ harness.get_by_role_and_label(Role::Button, "Settings").click();
 - Tooltips name the key a control is on, read from the app's keymap rather
   than typed into the text: `"Settings  (Home)"` — on an icon-only button,
   `.tip("Settings").hint(key)`.
-- No egui `Button`, `small_button`, `selectable_label`, `ComboBox` or framed
-  `TextEdit` in an app that uses the kit, and no hand-painted controls. What
+- No egui `Button`, `small_button`, `selectable_label`, `ComboBox`,
+  `menu_button`, `context_menu` or framed `TextEdit` in an app that uses the
+  kit, and no hand-painted controls. What
   the kit lacks is added here, with a test, so every app gets it.

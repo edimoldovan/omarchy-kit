@@ -1,6 +1,6 @@
 ---
 name: omarchy-kit
-description: Build or restyle an egui / eframe UI in the user's own Rust apps with omarchy-kit — the Omarchy theme's colours (with defaults off Omarchy) and the shared buttons, text fields, tag fields, checkboxes, number fields, toggle, swatches, dialogs, status line, item marks and command palette drawn from them. Use whenever a Rust desktop UI gets a button, a text field, a search box, a list of tags or email addresses, a checkbox, a number, a colour, a dialog or a status line, a toggle or tabs, a toolbar, a sidebar, a list row, a card, a selection or keyboard highlight, a corner radius, a command palette or a list of keyboard shortcuts, or a colour; when a UI should "look consistent", "follow the theme" or "match Post"; and when starting a new egui app.
+description: Build or restyle an egui / eframe UI in the user's own Rust apps with omarchy-kit — the Omarchy theme's colours (with defaults off Omarchy) and the shared buttons, text fields, tag fields, checkboxes, switches, number fields, sliders, toggle, swatches, foldable sections, dialogs, menus, status line, item marks, icons and command palette drawn from them. Use whenever a Rust desktop UI gets a button, a text field, a search box, a list of tags or email addresses, a checkbox, a number, a colour, a dialog or a status line, an on/off switch, an inspector section, a menu bar or a right-click menu, a toggle or tabs, a toolbar, a sidebar, a list row, a card, a selection or keyboard highlight, a corner radius, a command palette or a list of keyboard shortcuts, or a colour; when a UI should "look consistent", "follow the theme" or "match Post"; and when starting a new egui app.
 ---
 
 # omarchy-kit
@@ -52,7 +52,7 @@ and parade traces, colour wheels, vectorscope targets, the picture.
 ## Widgets
 
 ```rust
-use omarchy_kit::{Button, Checkbox, Choice, ColorButton, CommandPalette, Dialog, Dropdown, Item, NumberField, Section, Size, Slider, StatusLine, Swatches, Switch, TagField, TextField, Toggle, field};
+use omarchy_kit::{Button, Checkbox, Choice, ColorButton, CommandPalette, Dialog, Dropdown, Item, MenuBar, NumberField, Section, Size, Slider, StatusLine, Swatches, Switch, TagField, TextField, Toggle, context_menu, field};
 
 ui.add(Button::new("Send").icon(glyph("send")).primary());
 ui.add(Button::new("Discard"));                                  // secondary is the default
@@ -189,6 +189,14 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
   is marked — filled while open (on screen beside its list), a quiet fill
   under the pointer, the accent outline where the keyboard is — fill and
   outline in the size's one corner.
+- `MenuBar::new().show(ui, |bar| bar.menu("File", |m| …))` and
+  `context_menu(&response, |m| …)`: the same lines in both —
+  `m.item(label).key(k).enabled(b).clicked()`, `m.check(label, &mut bool)`,
+  `m.separator()`, `m.submenu(label, |m| …)`. Label left, key dim right, a
+  tick column when a line can be checked. A click runs a line and closes the
+  chain; Up/Down walk (past separators and disabled lines), Enter runs,
+  Right/Left go into and out of submenus and across the bar, Esc closes. A
+  line is named by its label; its key is its keyboard shortcut.
 - `CommandPalette`: `.open()`, `.close()`, `.toggle()`, `.is_open()`, and
   `.show(ctx, key, &[Choice]) -> Option<usize>` — drawn over the window, at
   the top, while open: a field with `key` at its end, the choices that match
@@ -255,7 +263,7 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
   gets `.name(…)`. A text field without one is named by its hint.
 - A choice among more than a `Toggle` holds is a `Dropdown`; never a
   `Button` with a popup of buttons, and never egui's `ComboBox`.
-- No egui `Button`, `small_button`, `selectable_label`, `checkbox`, `radio`, `DragValue`, `Window`, `ComboBox` or framed
+- No egui `Button`, `small_button`, `selectable_label`, `checkbox`, `radio`, `DragValue`, `Window`, `ComboBox`, `menu_button`, `context_menu` or framed
   `TextEdit` in an app that uses the kit, and no hand-painted buttons. What the
   kit lacks gets added to the kit, with a test, so
   every app gets it.
