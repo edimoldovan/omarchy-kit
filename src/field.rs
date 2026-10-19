@@ -15,17 +15,30 @@ type Icon<'a> = Box<dyn Fn(&Painter, Rect, Color32) + 'a>;
 /// while what it holds has the keyboard. `add` returns whether it does, and
 /// whatever else it likes.
 pub fn field<R>(ui: &mut Ui, size: Size, add: impl FnOnce(&mut Ui) -> (bool, R)) -> R {
-    let ink = Ink::of(ui);
     let line = size.text() * 1.3;
     let pad_y = ((size.height() - line) / 2.0).max(2.0);
+    framed(ui, size, Margin::symmetric(size.pad() as i8, pad_y as i8), line, add)
+}
+
+/// The field's frame with `margin` inside it and room for at least `tall`
+/// of content: what [`field`] draws, and what the tag field draws with the
+/// room its tags need.
+pub(crate) fn framed<R>(
+    ui: &mut Ui,
+    size: Size,
+    margin: Margin,
+    tall: f32,
+    add: impl FnOnce(&mut Ui) -> (bool, R),
+) -> R {
+    let ink = Ink::of(ui);
     let mut prepared = Frame::new()
         .fill(ink.shade(0.10))
         .corner_radius(size.radius())
-        .inner_margin(Margin::symmetric(size.pad() as i8, pad_y as i8))
+        .inner_margin(margin)
         // Always a stroke, so having the keyboard never moves what is inside.
         .stroke(Stroke::new(1.0_f32, Color32::TRANSPARENT))
         .begin(ui);
-    prepared.content_ui.set_min_height(line);
+    prepared.content_ui.set_min_height(tall);
     let (focused, inner) = add(&mut prepared.content_ui);
     if focused {
         prepared.frame.stroke = Stroke::new(1.0_f32, ink.accent);

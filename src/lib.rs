@@ -9,6 +9,8 @@
 //! - [`Button`]: four kinds — primary, secondary, quiet, danger — in three
 //!   sizes, with an optional icon and key hint;
 //! - [`TextField`], and [`field`] for a field that holds more than text;
+//! - [`TagField`]: what has been entered, as tags, with the text being typed
+//!   after them — the addresses an email goes to;
 //! - [`Toggle`]: a choice of a few, shown together;
 //! - [`Dropdown`]: a choice among more than fit together, in a list below;
 //! - [`Slider`]: an amount between two ends, dragged;
@@ -30,6 +32,7 @@ mod field;
 mod item;
 mod palette;
 mod slider;
+mod tag;
 mod toggle;
 
 pub use button::{Button, Kind};
@@ -38,6 +41,7 @@ pub use field::{TextField, field};
 pub use item::Item;
 pub use palette::{Choice, CommandPalette};
 pub use slider::Slider;
+pub use tag::TagField;
 pub use toggle::Toggle;
 
 use egui::{Color32, Ui};

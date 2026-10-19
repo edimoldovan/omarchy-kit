@@ -1,6 +1,6 @@
 ---
 name: omarchy-kit
-description: Build or restyle an egui / eframe UI in the user's own Rust apps with omarchy-kit — the Omarchy theme's colours (with defaults off Omarchy) and the shared buttons, text fields, toggle, item marks and command palette drawn from them. Use whenever a Rust desktop UI gets a button, a text field, a search box, a toggle or tabs, a toolbar, a sidebar, a list row, a card, a selection or keyboard highlight, a corner radius, a command palette or a list of keyboard shortcuts, or a colour; when a UI should "look consistent", "follow the theme" or "match Post"; and when starting a new egui app.
+description: Build or restyle an egui / eframe UI in the user's own Rust apps with omarchy-kit — the Omarchy theme's colours (with defaults off Omarchy) and the shared buttons, text fields, tag fields, toggle, item marks and command palette drawn from them. Use whenever a Rust desktop UI gets a button, a text field, a search box, a list of tags or email addresses, a toggle or tabs, a toolbar, a sidebar, a list row, a card, a selection or keyboard highlight, a corner radius, a command palette or a list of keyboard shortcuts, or a colour; when a UI should "look consistent", "follow the theme" or "match Post"; and when starting a new egui app.
 ---
 
 # omarchy-kit
@@ -42,7 +42,7 @@ exception is a product's own logo, which keeps its own colours.
 ## Widgets
 
 ```rust
-use omarchy_kit::{Button, Choice, CommandPalette, Dropdown, Item, Size, Slider, TextField, Toggle, field};
+use omarchy_kit::{Button, Choice, CommandPalette, Dropdown, Item, Size, Slider, TagField, TextField, Toggle, field};
 
 ui.add(Button::new("Send").icon(glyph("send")).primary());
 ui.add(Button::new("Discard"));                                  // secondary is the default
@@ -53,6 +53,12 @@ ui.add(Button::new("Compose").primary().large().width(ui.available_width()));
 ui.add(Button::icon_only(glyph("gear")).quiet().selected(on_settings));
 
 let search = ui.add(TextField::new(&mut query).icon(glyph("find")).hint("Search").key("/"));
+
+// A list entered one item at a time: the items as tags, the typing after
+// them. Both Vec<String> and String are the app's; commit what is still
+// typed before the list is used.
+let to = ui.add(TagField::new(&mut addresses, &mut typing).accept(is_address).separators(" ,;").hint("name@example.com"));
+TagField::commit(&mut addresses, &mut typing, is_address);
 
 let mut chosen = usize::from(unread_only);
 if ui.add(Toggle::new(&mut chosen, &["All", "Unread"])).changed() { /* … */ }
@@ -103,6 +109,16 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
   the value in its field), `.small()`, `.width`, `.id_salt`; `changed()`
   whenever the value moved. The fill runs from zero when the range crosses
   zero, else from the start.
+- `TagField`: tags in a field with the typing after them, a line tall until
+  the tags need more. What is typed becomes a tag when a separator ends it,
+  or on Enter, Tab or leaving the field, whenever `.accept(fn)` takes it
+  (anything when unset); what it does not take stays typed. Backspace with
+  nothing typed takes the last tag back, each tag's × takes it off, the same
+  tag twice in any case is one. `.separators(chars)` (`",;"` when unset),
+  `.hint`, `.small()`, `.width`, `.id_salt`; `TagField::commit(tags, typing,
+  accept)` takes what is still typed. Its response is the typed text's,
+  `changed` also when a tag came or went. A tag's text starts where a
+  field's text does, so it lines up with the fields around it.
 - `field(ui, size, |ui| (focused, R)) -> R`: the field's fill, corner and focus
   outline around whatever the closure draws.
 - `Item { open, keyed, hovered, size }.paint(ui, rect)`: how a selectable thing
@@ -128,6 +144,8 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
 - Danger only for what cannot be undone, and only once it has been asked about.
 - Sizes: regular by default; small inside lists, chips and dense bars; large
   for the one control a screen leads with.
+- A list entered one item at a time — addresses, labels — is a `TagField`;
+  never a `TextField` with commas in it, never hand-drawn chips.
 - Every text input is a `TextField`, or sits in `field`. A choice of a few
   (All / Unread) is a `Toggle`, not tabs or selectable labels.
 - Every selectable row, entry or card is marked with `Item`: what is open is
@@ -151,5 +169,5 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
   `Button` with a popup of buttons, and never egui's `ComboBox`.
 - No egui `Button`, `small_button`, `selectable_label`, `ComboBox` or framed
   `TextEdit` in an app that uses the kit, and no hand-painted buttons. What the
-  kit lacks gets added to the kit — `crates/omarchy-kit` — with a test, so
+  kit lacks gets added to the kit, with a test, so
   every app gets it.
