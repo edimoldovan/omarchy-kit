@@ -2,8 +2,8 @@
 //! button that opens them.
 
 use egui::{
-    Color32, Id, Painter, Popup, Pos2, Rect, Response, RichText, Sense, Stroke, StrokeKind, Ui, Vec2, Widget, WidgetInfo,
-    WidgetType,
+    Color32, Id, Painter, Popup, PopupCloseBehavior, Pos2, Rect, Response, RichText, Sense, Stroke, StrokeKind, Ui, Vec2,
+    Widget, WidgetInfo, WidgetType,
 };
 
 use crate::{Button, Ink, Size, Slider, TextField};
@@ -166,6 +166,15 @@ impl<'a> Swatches<'a> {
 
 impl Widget for Swatches<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
+        self.show(ui).0
+    }
+}
+
+impl Swatches<'_> {
+    /// Draws them; with the response, whether the colour changed by a pick —
+    /// a square, the entry for no colour, or a colour typed — rather than by
+    /// the opacity, which is adjusted with the swatches still open.
+    fn show(self, ui: &mut Ui) -> (Response, bool) {
         let Swatches { colour, clear, recent, alpha, id } = self;
         // A standard colour picked keeps the opacity there is.
         let opacity = colour.map_or(255, |c| c.a());
@@ -173,6 +182,7 @@ impl Widget for Swatches<'_> {
         let width = 10.0 * SQUARE + 9.0 * GAP;
         let id = id.unwrap_or_else(|| ui.next_auto_id().with("omarchy-kit-swatches"));
         let mut picked: Option<Option<Color32>> = None;
+        let mut by_opacity = false;
         let mut inner = ui.scope(|ui| {
             ui.set_width(width);
             ui.spacing_mut().item_spacing = Vec2::splat(GAP);
@@ -209,6 +219,7 @@ impl Widget for Swatches<'_> {
                     && let Some(c) = *colour
                 {
                     picked = Some(Some(with_alpha(c, (percent * 2.55).round() as u8)));
+                    by_opacity = true;
                 }
             }
             ui.add_space(2.0);
@@ -232,13 +243,15 @@ impl Widget for Swatches<'_> {
             }
         })
         .response;
+        let mut pick = false;
         if let Some(choice) = picked
             && choice != *colour
         {
             *colour = choice;
             inner.mark_changed();
+            pick = !by_opacity;
         }
-        inner
+        (inner, pick)
     }
 }
 
@@ -353,7 +366,9 @@ impl Widget for ColorButton<'_> {
             }
         }
         let mut picked = false;
-        Popup::menu(&response).show(|ui| {
+        // A click inside works the swatches, the opacity and the field; one
+        // beside them closes them.
+        Popup::menu(&response).close_behavior(PopupCloseBehavior::CloseOnClickOutside).show(|ui| {
             let mut swatches = Swatches::new(colour).recent(recent).id_salt(response.id.with("swatches"));
             if alpha {
                 swatches = swatches.alpha();
@@ -361,8 +376,11 @@ impl Widget for ColorButton<'_> {
             if let Some(label) = &clear {
                 swatches = swatches.clear(label.as_str());
             }
-            if ui.add(swatches).changed() {
+            let (shown, pick) = swatches.show(ui);
+            if shown.changed() {
                 picked = true;
+            }
+            if pick {
                 ui.close();
             }
         });

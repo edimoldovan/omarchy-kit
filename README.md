@@ -96,6 +96,7 @@ if let Some(palette) = self.theme_watcher.changed(ctx) {
 
 | `Size` | Height | Corner | Text | For |
 |---|---|---|---|---|
+| `Mini` | 20 | 5 | 11.5 | Icon buttons on a bar denser still, such as a timeline's track headers |
 | `Small` | 26 | 7 | 12.5 | Lists, dense bars, and what sits inside another element |
 | `Regular` — the default | 32 | 8 | 14 | Everything else |
 | `Large` | 42 | 10 | 15 | The one control a screen leads with, such as Compose |
@@ -139,7 +140,8 @@ ui.add(Button::icon_only(glyph("gear")).quiet().selected(on_settings));
 - `.selected(true)` marks the quiet tool whose screen is showing.
 - `.bar(Some(colour))` puts a bar of that colour along its bottom edge: the
   colour a sheet's tab was given.
-- `.width(w)`, `.small()`, `.large()`, `.kind(Kind)`.
+- `.width(w)`, `.small()`, `.large()`, `.mini()` (20 points, for icon buttons
+  on a dense bar such as a timeline's track headers), `.kind(Kind)`.
 - It is a `Widget`: `ui.add`, `ui.add_enabled`, and the usual `Response`.
 
 ## TextField
@@ -342,6 +344,10 @@ ui.add(Slider::new(&mut grade.temperature, 2000.0..=10000.0).label("Temperature"
   frequency; a range that does not start above zero stays linear.
 - `.track(&[(f32, Color32)])` paints colour stops along the track in place of
   the fill, each a fraction of the track and its colour.
+- `.keep_keyboard()`: a click or a drag on the track leaves the keyboard
+  where it was rather than handing it to the field, for apps whose plain
+  keys are shortcuts (an editor's Space, J, K, L); a click on the field
+  still takes it for typing.
 - It holds an `f32` or an `f64`.
 - `.name(…)`, `.small()`, `.width(w)`, `.id_salt(salt)`; `changed()` whenever
   the value moved; `adjust_ended()` — see [Adjustments](#adjustments).
@@ -556,6 +562,9 @@ context_menu(&clip, |m| {
   lines; Enter runs one; Right and Left go into and out of a submenu, and
   across the bar; Esc closes them all.
 - A line is named by its label; its key is its keyboard shortcut, apart.
+- `menu_open(ctx)` says whether a menu was open when the last frame drew
+  it: an app that reads its own shortcuts before drawing leaves the keys to
+  the menu then, as the menu walks on Up and Down and closes on Esc.
 
 ## Names
 
@@ -602,7 +611,7 @@ harness.get_by_role_and_label(Role::Button, "Settings").click();
     save, open, new-doc, find, filter, sort, sort-asc, sort-desc, chart,
     zoom-in, zoom-out, zoom-reset, align-left, align-center, align-right,
     wrap, fill-color, bold, italic;
-  - moving: back, prev, next, plus, close, check, gear, keyboard, help;
+  - moving: back, prev, next, up, down, plus, close, check, gear, keyboard, help;
   - editing tools: select, razor, slip, slide, stretch, split, render,
     snapping;
   - tracks: lock, unlock, eye, eye-off, mute, solo, effects;

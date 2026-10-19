@@ -4,7 +4,7 @@ use egui::accesskit::{Role, Toggled};
 use egui::{Event, Key, Modifiers, PointerButton, Pos2, Sense};
 use egui_kittest::Harness;
 use egui_kittest::kittest::{NodeT, Queryable};
-use omarchy_kit::{MenuBar, context_menu};
+use omarchy_kit::{MenuBar, context_menu, menu_open};
 
 #[derive(Default)]
 struct App {
@@ -203,4 +203,19 @@ fn a_right_click_opens_a_menu_of_the_same_lines() {
     harness.run();
     assert!(!shows(&harness, Role::MenuItem, "Cut"), "a press elsewhere closed it");
     assert_eq!(harness.state().cut, 1);
+}
+
+/// `menu_open` says a menu is open while it is, so an app can leave the
+/// keys to it, and not once it has closed.
+#[test]
+fn menu_open_follows_the_menu() {
+    let mut harness = harness();
+    assert!(!menu_open(&harness.ctx), "nothing open yet");
+    open_file(&mut harness);
+    harness.run();
+    assert!(menu_open(&harness.ctx), "the File menu is open");
+    harness.key_press(Key::Escape);
+    harness.run();
+    harness.run();
+    assert!(!menu_open(&harness.ctx), "Esc closed it");
 }

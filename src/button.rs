@@ -113,6 +113,11 @@ impl<'a> Button<'a> {
         self.size(Size::Small)
     }
 
+    /// For a dense bar's icons, such as a timeline's track headers.
+    pub fn mini(self) -> Button<'a> {
+        self.size(Size::Mini)
+    }
+
     pub fn large(self) -> Button<'a> {
         self.size(Size::Large)
     }

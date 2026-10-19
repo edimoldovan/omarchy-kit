@@ -100,6 +100,17 @@ fn walk(lines: &[Kind], from: Option<usize>, step: isize) -> Option<usize> {
     from
 }
 
+const OPEN: &str = "omarchy-kit-menu-open";
+
+/// Whether a menu — the bar's or a right-click one — was open when the
+/// last frame drew it: an app that reads its own shortcuts before drawing
+/// leaves the keys to it then, as the menu walks on Up and Down and closes
+/// on Esc.
+pub fn menu_open(ctx: &Context) -> bool {
+    let now = ctx.cumulative_pass_nr();
+    ctx.data(|d| d.get_temp::<u64>(Id::new(OPEN))).is_some_and(|pass| pass + 1 >= now)
+}
+
 /// The keys, while the chain is open: Up and Down walk the deepest menu,
 /// Enter runs its line or opens its submenu, Right opens a submenu or moves
 /// to the bar's next menu, Left closes a submenu or moves to the bar's
@@ -108,6 +119,8 @@ fn keys(ctx: &Context, root: Id, bar: bool) {
     if load(ctx, root).open.is_none() {
         return;
     }
+    let pass = ctx.cumulative_pass_nr();
+    ctx.data_mut(|d| d.insert_temp(Id::new(OPEN), pass));
     let [up, down, left, right, enter, escape] = ctx.input_mut(|i| {
         [Key::ArrowUp, Key::ArrowDown, Key::ArrowLeft, Key::ArrowRight, Key::Enter, Key::Escape]
             .map(|key| i.consume_key(Modifiers::NONE, key))

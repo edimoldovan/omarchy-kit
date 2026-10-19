@@ -99,6 +99,32 @@ fn a_drag_and_its_nudges_are_one_adjustment() {
     assert_eq!((harness.state().1, harness.state().2), (1, 1), "it ended once");
 }
 
+/// A slider that keeps the keyboard leaves it where it was after a drag:
+/// the adjustment ends as the pointer comes up, and keys go on reaching
+/// the app rather than the field.
+#[test]
+fn a_slider_that_keeps_the_keyboard_ends_its_adjustment_on_release() {
+    let mut harness = Harness::new_ui_state(
+        |ui, (scale, ends, focused): &mut (f32, u32, bool)| {
+            let slider = ui.add(Slider::new(scale, 0.0..=1.0).name("Scale").width(300.0).keep_keyboard().id_salt("scale"));
+            if slider.adjust_ended() {
+                *ends += 1;
+            }
+            *focused = ui.ctx().wants_keyboard_input();
+        },
+        (0.0, 0, false),
+    );
+    let track = harness.get_by_role_and_label(Role::Slider, "Scale").rect();
+    press(&mut harness, track.left_center() + Vec2::new(20.0, 0.0), true);
+    harness.event(Event::PointerMoved(track.center()));
+    harness.run();
+    press(&mut harness, track.center(), false);
+    harness.run();
+    assert!(harness.state().0 > 0.3, "the drag moved it");
+    assert_eq!(harness.state().1, 1, "the adjustment ended with the drag");
+    assert!(!harness.state().2, "no field took the keyboard");
+}
+
 /// Dragged sideways, a number field moves by its speed per point and the
 /// adjustment ends as the pointer comes up; a click without a drag puts the
 /// cursor in to type.

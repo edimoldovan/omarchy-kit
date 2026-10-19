@@ -62,7 +62,7 @@ pub use dialog::{Dialog, DialogResponse};
 pub use dropdown::Dropdown;
 pub use field::{TextField, field};
 pub use item::Item;
-pub use menu::{Bar, Menu, MenuBar, MenuItem, context_menu};
+pub use menu::{Bar, Menu, MenuBar, MenuItem, context_menu, menu_open};
 pub use number::NumberField;
 pub use palette::{Choice, CommandPalette};
 pub use section::{Section, SectionResponse};
@@ -78,6 +78,9 @@ use egui::{Color32, Ui};
 /// How big a control is.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Size {
+    /// A dense bar's icons, such as a timeline's track headers, where even
+    /// a small control would crowd.
+    Mini,
     /// Lists, side bars, chips: where a regular control would crowd.
     Small,
     /// Everything else.
@@ -90,6 +93,7 @@ pub enum Size {
 impl Size {
     pub fn height(self) -> f32 {
         match self {
+            Size::Mini => 20.0,
             Size::Small => 26.0,
             Size::Regular => 32.0,
             Size::Large => 42.0,
@@ -98,6 +102,7 @@ impl Size {
 
     pub fn radius(self) -> f32 {
         match self {
+            Size::Mini => 5.0,
             Size::Small => 7.0,
             Size::Regular => 8.0,
             Size::Large => 10.0,
@@ -107,6 +112,7 @@ impl Size {
     /// The type size of a label.
     pub fn text(self) -> f32 {
         match self {
+            Size::Mini => 11.5,
             Size::Small => 12.5,
             Size::Regular => 14.0,
             Size::Large => 15.0,
@@ -116,6 +122,7 @@ impl Size {
     /// Room on either side of what a control says.
     pub fn pad(self) -> f32 {
         match self {
+            Size::Mini => 6.0,
             Size::Small => 9.0,
             Size::Regular => 13.0,
             Size::Large => 16.0,
@@ -125,6 +132,7 @@ impl Size {
     /// The square an icon is drawn in.
     pub fn icon(self) -> f32 {
         match self {
+            Size::Mini => 13.0,
             Size::Small => 14.0,
             Size::Regular => 17.0,
             Size::Large => 19.0,

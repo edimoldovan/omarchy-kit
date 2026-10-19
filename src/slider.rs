@@ -45,6 +45,7 @@ impl Amount for f64 {
 /// The knob's radius; the track keeps that much clear at both ends.
 fn knob(size: Size) -> f32 {
     match size {
+        Size::Mini => 6.0,
         Size::Small => 7.0,
         Size::Regular | Size::Large => 9.0,
     }
@@ -77,6 +78,7 @@ pub struct Slider<'a, T: Amount = f32> {
     size: Size,
     width: Option<f32>,
     id: Option<Id>,
+    keep_keyboard: bool,
 }
 
 impl<'a, T: Amount> Slider<'a, T> {
@@ -95,7 +97,17 @@ impl<'a, T: Amount> Slider<'a, T> {
             size: Size::default(),
             width: None,
             id: None,
+            keep_keyboard: false,
         }
+    }
+
+    /// A click or a drag on the track leaves the keyboard where it was,
+    /// rather than handing it to the field: for apps whose plain keys are
+    /// shortcuts (an editor's Space, J, K, L). A click on the field still
+    /// takes the keyboard for typing.
+    pub fn keep_keyboard(mut self) -> Slider<'a, T> {
+        self.keep_keyboard = true;
+        self
     }
 
     /// What the amount is, on a line above the track.
@@ -258,7 +270,7 @@ impl<T: Amount> Widget for Slider<'_, T> {
         } else if pressing && let Some(at) = track.interact_pointer_pos() {
             value = quantize(scale.value_at(fraction(at.x, left, right)), self.decimals);
         }
-        if track.clicked() || track.drag_started() {
+        if !self.keep_keyboard && (track.clicked() || track.drag_started()) {
             ui.memory_mut(|m| m.request_focus(edit_id));
         }
 

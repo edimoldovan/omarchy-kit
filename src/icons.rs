@@ -335,6 +335,12 @@ pub fn build(rect: Rect, name: &str, color: Color32) -> Option<Vec<Shape>> {
             arrow_head(x, 0.50, dir, 0.0, 0.26);
             line((0.5 - dir * 0.34, 0.50), (0.5 + dir * 0.10, 0.50));
         }
+        "up" | "down" => {
+            let dir = if name == "down" { 1.0 } else { -1.0 };
+            let y = if name == "down" { 0.72 } else { 0.28 };
+            arrow_head(0.50, y, 0.0, dir, 0.26);
+            line((0.50, 0.5 - dir * 0.34), (0.50, 0.5 + dir * 0.10));
+        }
 
         // ----- history / file -----
         "undo" | "redo" => {
@@ -590,7 +596,7 @@ mod tests {
     const SAMPLE: &[&str] = &[
         "cut", "copy", "paste", "save", "undo", "redo", "clear", "sort", "sort-asc", "sort-desc",
         "filter", "find", "chart", "zoom-in", "zoom-out", "zoom-reset", "duplicate", "rename",
-        "trash", "prev", "next", "align-left", "align-center", "align-right", "wrap", "open",
+        "trash", "prev", "next", "up", "down", "align-left", "align-center", "align-right", "wrap", "open",
         "new-doc", "fill-color", "back", "gear", "keyboard", "plus", "close", "check", "bold",
         "italic", "select", "razor", "slip", "slide", "stretch", "split", "render", "snapping",
         "lock", "unlock", "eye", "eye-off", "mute", "solo", "effects", "keyframe",

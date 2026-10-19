@@ -26,6 +26,16 @@ fn buttons_are_named_by_their_label_or_their_tip() {
     harness.get_by_role_and_label(Role::Button, "Settings");
 }
 
+/// A mini icon button is 20 points square, for a dense bar.
+#[test]
+fn a_mini_icon_button_is_twenty_points_square() {
+    let harness = Harness::new_ui(|ui| {
+        ui.add(Button::icon_only(|_, _, _| {}).quiet().mini().tip("Mute"));
+    });
+    let rect = harness.get_by_role_and_label(Role::Button, "Mute").rect();
+    assert_eq!((rect.width(), rect.height()), (20.0, 20.0));
+}
+
 /// A checkbox says whether it is on, and a click turns it.
 #[test]
 fn a_checkbox_reports_its_state() {
@@ -151,6 +161,61 @@ fn colours_are_named_by_their_hex() {
     harness.get_by_role_and_label(Role::Button, "No colour");
     let fill = harness.get_by_role_and_label(Role::Button, "Fill colour");
     assert_eq!(fill.accesskit_node().value().as_deref(), Some("#FF0000"));
+}
+
+/// A colour button's swatches stay open while their field is typed into,
+/// and the colour typed is the button's.
+#[test]
+fn a_colour_buttons_field_takes_a_typed_colour() {
+    let mut harness = Harness::new_ui_state(
+        |ui, fill: &mut Option<Color32>| {
+            ui.add(ColorButton::new(fill, |_, _, _| {}).alpha().tip("Fill colour"));
+        },
+        Some(Color32::BLACK),
+    );
+    harness.get_by_role_and_label(Role::Button, "Fill colour").click();
+    harness.run();
+    harness.get_by_label("#RRGGBB or #AARRGGBB").click();
+    harness.run();
+    harness.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::A);
+    harness.run();
+    harness.get_by_label("#RRGGBB or #AARRGGBB").type_text("#80FF2040");
+    harness.run();
+    harness.key_press(egui::Key::Enter);
+    harness.run();
+    assert_eq!(*harness.state(), parse_argb("#80FF2040"));
+}
+
+/// Dragging a colour button's opacity keeps its swatches open, so the drag
+/// goes on to where it is let go.
+#[test]
+fn a_colour_buttons_opacity_drags_with_the_swatches_open() {
+    let mut harness = Harness::new_ui_state(
+        |ui, fill: &mut Option<Color32>| {
+            ui.add(ColorButton::new(fill, |_, _, _| {}).alpha().tip("Fill colour"));
+        },
+        Some(Color32::BLACK),
+    );
+    harness.get_by_role_and_label(Role::Button, "Fill colour").click();
+    harness.run();
+    let track = harness.get_by_role_and_label(Role::Slider, "Opacity").rect();
+    let (from, to) = (track.right_center() - egui::Vec2::new(12.0, 0.0), track.center());
+    let button = |pos, pressed| egui::Event::PointerButton {
+        pos,
+        button: egui::PointerButton::Primary,
+        pressed,
+        modifiers: egui::Modifiers::NONE,
+    };
+    harness.event(egui::Event::PointerMoved(from));
+    harness.event(button(from, true));
+    harness.run();
+    harness.event(egui::Event::PointerMoved(to));
+    harness.run();
+    harness.event(button(to, false));
+    harness.run();
+    assert!(harness.query_by_role_and_label(Role::Slider, "Opacity").is_some(), "still open");
+    let alpha = harness.state().map_or(0, |c| c.a());
+    assert!((100..=155).contains(&alpha), "dragged to the middle: {alpha}");
 }
 
 /// With `.alpha()`, a see-through colour typed into the field is picked and

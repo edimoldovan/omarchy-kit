@@ -112,7 +112,7 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
 ```
 
 - `Button`: `.primary()`, `.quiet()`, `.danger()` (secondary when none);
-  `.small()`, `.large()` (regular when none); `.icon(..)`, `.hint(key)`,
+  `.small()`, `.large()`, `.mini()` (regular when none); `.icon(..)`, `.hint(key)`,
   `.selected(bool)`, `.width(w)`, `.bar(Some(colour))` (a colour bar along
   its bottom edge: a sheet tab's colour). It is a `Widget`: `ui.add` /
   `ui.add_enabled` and the usual `Response`.
@@ -135,7 +135,9 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
   `.inline_label(width)` puts the label in a column on the track's line, a
   small row (an inspector's rows line up); `.logarithmic()` (speed, scale,
   a frequency); `.track(&[(f32, Color32)])` paints colour stops along the
-  track in place of the fill (temperature, tint, hue).
+  track in place of the fill (temperature, tint, hue); `.keep_keyboard()`
+  leaves the keyboard where it was after a click or drag on the track, for
+  apps whose plain keys are shortcuts (a click on the field still takes it).
 - `use omarchy_kit::Adjust`: on a slider's or number field's response,
   `adjusting()` from the first press, drag or nudge until the pointer is up
   and the field has let go of the keyboard; `adjust_ended()` on that one
@@ -197,6 +199,8 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
   chain; Up/Down walk (past separators and disabled lines), Enter runs,
   Right/Left go into and out of submenus and across the bar, Esc closes. A
   line is named by its label; its key is its keyboard shortcut.
+  `menu_open(ctx)` says a menu was open last frame: an app that reads its
+  own shortcuts before drawing leaves the keys to the menu then.
 - `CommandPalette`: `.open()`, `.close()`, `.toggle()`, `.is_open()`, and
   `.show(ctx, key, &[Choice]) -> Option<usize>` — drawn over the window, at
   the top, while open: a field with `key` at its end, the choices that match
@@ -225,7 +229,8 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
   `.selected(true)` for the one whose screen is on screen.
 - Danger only for what cannot be undone, and only once it has been asked about.
 - Sizes: regular by default; small inside lists, chips and dense bars; large
-  for the one control a screen leads with.
+  for the one control a screen leads with; mini (20 points) for icon buttons
+  on a bar denser still, such as a timeline's track headers.
 - A list entered one item at a time — addresses, labels — is a `TagField`;
   never a `TextField` with commas in it, never hand-drawn chips.
 - A single option on or off is a `Checkbox`; a feature or a group of settings
