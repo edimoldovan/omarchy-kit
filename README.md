@@ -6,6 +6,15 @@ visuals; every element is drawn from those visuals and nothing else. Apps built
 with it look like one product and follow a theme switch live. Off Omarchy they
 fall back to a neutral dark theme.
 
+Post, Grido and omarchy-kit are made together:
+
+- [**Post**](https://github.com/edimoldovan/post) — Gmail as a native window
+  on Linux, a command in the terminal, and tools for Claude.
+- [**Grido**](https://github.com/edimoldovan/grido) — a fast native
+  spreadsheet for `.xlsx` files, and tools for Claude.
+- [**omarchy-kit**](https://github.com/edimoldovan/omarchy-kit) — the egui
+  elements both apps are built from, in the Omarchy theme's colours.
+
 ## The elements
 
 | Element | What it is | Use it for |
