@@ -50,6 +50,9 @@ if let Some(palette) = self.theme_watcher.changed(ctx) {
 }
 ```
 
+- `fonts::install(ctx)`, once when the app starts, adds the system's symbol
+  fonts behind egui's own, so symbols such as ▾ and ✕ do not render as empty
+  boxes.
 - `theme::Palette` is `{ bg, fg, accent }`; `theme::mix(a, b, t)` gives every
   shade between two of them.
 - Colours come from the palette and from `ui.visuals()` only. The one exception

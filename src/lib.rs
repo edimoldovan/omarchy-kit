@@ -19,13 +19,16 @@
 //! - [`CommandPalette`]: every action there is, found by typing, each with its
 //!   key;
 //! - [`icons`]: the pen every icon is drawn with, and the glyphs every app
-//!   shares.
+//!   shares;
+//! - [`fonts`]: the system's symbol fonts behind egui's own, so symbols do
+//!   not render as empty boxes.
 //!
 //! A size is one height, one corner and one type size, for buttons, fields,
 //! toggles and items alike, so everything lines up wherever it meets. Rows,
 //! entries and cards take the regular corner; what sits inside one — chips,
 //! badges, avatars — the small one.
 
+pub mod fonts;
 pub mod icons;
 pub mod theme;
 

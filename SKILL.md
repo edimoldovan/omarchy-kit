@@ -35,6 +35,8 @@ if let Some(palette) = self.theme_watcher.changed(ctx) {
 }
 ```
 
+`fonts::install(ctx)`, once at start, adds the system's symbol fonts behind
+egui's own, so symbols such as ▾ and ✕ do not render as empty boxes.
 `theme::Palette` is `{ bg, fg, accent }`; `theme::mix(a, b, t)` gives every
 in-between shade. Colours come from these and from `ui.visuals()` only. The one
 exception is a product's own logo, which keeps its own colours.
