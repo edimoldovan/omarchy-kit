@@ -64,9 +64,14 @@ if let Some(palette) = self.theme_watcher.changed(ctx) {
 }
 ```
 
-- `fonts::install(ctx)`, once when the app starts, adds the system's symbol
-  fonts behind egui's own, so symbols such as ▾ and ✕ do not render as empty
-  boxes.
+- `fonts::install(ctx)`, once when the app starts, puts the system's symbol
+  fonts — Linux's, and Apple Symbols on macOS — and then egui's own Hack
+  behind egui's fonts.
+- Text draws only the symbols the bundled fonts cover, so they draw where no
+  system font is installed:
+  × ✔ … — – · • ← → ↑ ↓ ↖ ↗ ↘ ↙ ⇆ ⇄ ⇔ ⇥ ⇩ ⇧ ↵ ▾ ▴ ▸ ◂ ▲ ▼ ◀ ▶ ◆ ◇ ● ○ ■ □ ⌘ ⏸ ⏮ ⏭ ⏪ ⏩ ✂ ⊢ ⊣ ° ± µ ½ ∩ ∞ ≈ ≠ ≤ ≥ ✚ ➕.
+  Not ✓, ✕, ⏎, ⌥, ⌫, ⏯ or ✎ — use ✔, × and ↵. The kit draws its own chevrons,
+  crosses and ticks with lines.
 - `theme::Palette` is `{ bg, fg, accent, ansi }`; `theme::mix(a, b, t)` gives
   every shade between two of them.
 - `ansi` is the theme's sixteen terminal colours, 0–7 normal and 8–15 bright,

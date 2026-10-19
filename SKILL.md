@@ -35,8 +35,10 @@ if let Some(palette) = self.theme_watcher.changed(ctx) {
 }
 ```
 
-`fonts::install(ctx)`, once at start, adds the system's symbol fonts behind
-egui's own, so symbols such as ▾ and ✕ do not render as empty boxes.
+`fonts::install(ctx)`, once at start, puts the system's symbol fonts (Linux's;
+Apple Symbols on macOS) and then egui's own Hack behind egui's fonts. Text
+draws only symbols the bundled fonts cover — × ✔ … — – · • ← → ↑ ↓ ↖ ↗ ↘ ↙ ⇆ ⇄ ⇔ ⇥ ⇩ ⇧ ↵ ▾ ▴ ▸ ◂ ▲ ▼ ◀ ▶ ◆ ◇ ● ○ ■ □ ⌘ ⏸ ⏮ ⏭ ⏪ ⏩ ✂ ⊢ ⊣ ° ± µ ½ ∩ ∞ ≈ ≠ ≤ ≥ ✚ ➕ — never ✓, ✕, ⏎, ⌥,
+⌫, ⏯ or ✎ (use ✔, × and ↵).
 `theme::Palette` is `{ bg, fg, accent, ansi }`; `theme::mix(a, b, t)` gives
 every in-between shade. `ansi` is the theme's sixteen terminal colours (0–7
 normal, 8–15 bright); `red()`, `green()`, `yellow()`, `blue()`, `magenta()`
