@@ -131,7 +131,15 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
   track puts it back), `.decimals` (shown, and the step), `.suffix` (after
   the value in its field), `.small()`, `.width`, `.id_salt`; `changed()`
   whenever the value moved. The fill runs from zero when the range crosses
-  zero, else from the start.
+  zero, else from the start. It holds an `f32` or an `f64`.
+  `.inline_label(width)` puts the label in a column on the track's line, a
+  small row (an inspector's rows line up); `.logarithmic()` (speed, scale,
+  a frequency); `.track(&[(f32, Color32)])` paints colour stops along the
+  track in place of the fill (temperature, tint, hue).
+- `use omarchy_kit::Adjust`: on a slider's or number field's response,
+  `adjusting()` from the first press, drag or nudge until the pointer is up
+  and the field has let go of the keyboard; `adjust_ended()` on that one
+  frame — record one undo step there, not one per frame or per nudge.
 - `TagField`: tags in a field with the typing after them, a line tall until
   the tags need more. What is typed becomes a tag when a separator ends it,
   or on Enter, Tab or leaving the field, whenever `.accept(fn)` takes it
@@ -153,10 +161,13 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
   a switch for the whole group and a reset at the far end; while switched
   off the body draws disabled, its values kept. Named: the title, "TITLE
   section", "Reset TITLE".
-- `NumberField::new(&mut f32, range)`: one number in the kit's field; Up and
-  Down step it (Shift ten, Ctrl a hundred), Enter or leaving takes what was
-  typed within the range, Esc puts it back; `.decimals` (0 when unset),
-  `.suffix`, `.small()`, `.width`, `.id_salt`.
+- `NumberField::new(&mut f32 | &mut f64, range)`: one number in the kit's
+  field; dragged sideways it moves `.speed(s)` per point (a step when unset),
+  a click puts the cursor in; Up and Down step it (Shift ten, Ctrl a
+  hundred), Enter or leaving takes what was typed within the range (which
+  may be open: `0.0..=f64::MAX`), Esc puts it back; `.decimals` (0 when
+  unset: whole numbers), `.prefix`, `.suffix`, `.name`, `.small()`, `.width`,
+  `.id_salt`.
 - `Swatches::new(&mut Option<Color32>)`: the standard colours as a grid, the
   chosen one outlined; `.clear(label)` for no colour, `.recent(&colours)`, a
   `#RRGGBB` field under them. `ColorButton::new(&mut Option<Color32>, icon)`

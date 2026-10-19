@@ -37,6 +37,7 @@ pub mod fonts;
 pub mod icons;
 pub mod theme;
 
+mod adjust;
 mod button;
 mod checkbox;
 mod dialog;
@@ -53,6 +54,7 @@ mod switch;
 mod tag;
 mod toggle;
 
+pub use adjust::Adjust;
 pub use button::{Button, Kind};
 pub use checkbox::Checkbox;
 pub use dialog::{Dialog, DialogResponse};
@@ -62,7 +64,7 @@ pub use item::Item;
 pub use number::NumberField;
 pub use palette::{Choice, CommandPalette};
 pub use section::{Section, SectionResponse};
-pub use slider::Slider;
+pub use slider::{Amount, Slider};
 pub use status::StatusLine;
 pub use swatches::{ColorButton, Swatches, hex, hex_argb, parse_argb, standard_colours};
 pub use switch::Switch;

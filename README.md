@@ -257,21 +257,29 @@ if shown.reset { grade = Grade::default(); }
 
 ## NumberField
 
-One number in the kit's field, kept within its range.
+One number in the kit's field, kept within its range: typed, nudged or
+dragged.
 
 ```rust
 use omarchy_kit::NumberField;
 
 if ui.add(NumberField::new(&mut size, 6.0..=96.0).suffix("pt")).changed() { /* … */ }
+ui.add(NumberField::new(&mut bitrate, 0.0..=f64::MAX).speed(50.0).suffix("kb/s").name("Bitrate"));
 ```
 
+- Dragged sideways it moves by `.speed(s)` per point — a step per point when
+  unset — with the sideways-resize pointer; a click without a drag puts the
+  cursor in to type.
 - While it has the keyboard, Up and Down move a step, Shift ten, Ctrl a
   hundred; Enter or leaving takes what was typed, within the range; Esc puts
   back what it was.
-- `.decimals(n)` sets what is shown and the step — none when unset;
-  `.suffix(text)` follows the number in its field.
-- `.small()`, `.width(w)`, `.id_salt(salt)`; `changed()` whenever the number
-  moved.
+- It holds an `f32` or an `f64`; the range may be open at an end,
+  `0.0..=f64::MAX`.
+- `.decimals(n)` sets what is shown and the step — none when unset, a field
+  of whole numbers; `.prefix(text)` comes before the number, `.suffix(text)`
+  after it.
+- `.name(…)`, `.small()`, `.width(w)`, `.id_salt(salt)`; `changed()`
+  whenever the number moved; `adjust_ended()` — see [Adjustments](#adjustments).
 
 ## Toggle
 
@@ -314,6 +322,10 @@ the end with the value, to type into.
 use omarchy_kit::Slider;
 
 if ui.add(Slider::new(&mut opacity, 0.0..=100.0).label("Opacity").default(100.0).decimals(0).suffix("%")).changed() { /* … */ }
+
+// An inspector's rows: the label in a column, a small row each.
+ui.add(Slider::new(&mut clip.speed, 0.1..=10.0).label("Speed").inline_label(74.0).logarithmic().suffix("×"));
+ui.add(Slider::new(&mut grade.temperature, 2000.0..=10000.0).label("Temperature").inline_label(74.0).track(&COOL_TO_WARM));
 ```
 
 - Dragging the track sets the value and hands the keyboard to the field.
@@ -323,8 +335,35 @@ if ui.add(Slider::new(&mut opacity, 0.0..=100.0).label("Opacity").default(100.0)
 - `.decimals(n)` sets what is shown and the step; `.suffix(text)` follows the
   value in its field.
 - The fill runs from zero when the range crosses zero, else from the start.
-- `.small()`, `.width(w)`, `.id_salt(salt)`; `changed()` whenever the value
-  moved.
+- `.inline_label(width)` puts the label in a column `width` wide on the
+  track's line, at the small size, so a stack of rows lines up.
+- `.logarithmic()` maps the track logarithmically — speed, scale, a
+  frequency; a range that does not start above zero stays linear.
+- `.track(&[(f32, Color32)])` paints colour stops along the track in place of
+  the fill, each a fraction of the track and its colour.
+- It holds an `f32` or an `f64`.
+- `.name(…)`, `.small()`, `.width(w)`, `.id_salt(salt)`; `changed()` whenever
+  the value moved; `adjust_ended()` — see [Adjustments](#adjustments).
+
+## Adjustments
+
+A drag on a slider or a number field, and the nudges after it while its field
+keeps the keyboard, are one adjustment: the one undo step an app records.
+
+```rust
+use omarchy_kit::Adjust;
+
+let scale = ui.add(Slider::new(&mut clip.scale, 0.1..=10.0).label("Scale").logarithmic());
+if scale.adjust_ended() {
+    history.record("Scale");
+}
+```
+
+- `adjusting()` is true from the first press on the track, the first drag on
+  the field or the first keyboard nudge, until the pointer is up and the field
+  has given up the keyboard.
+- `adjust_ended()` is true on the one frame it ended. A value typed and
+  entered is an adjustment of its own.
 
 ## Swatches
 

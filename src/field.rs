@@ -56,6 +56,7 @@ pub struct TextField<'a> {
     name: String,
     icon: Option<Icon<'a>>,
     key: Option<String>,
+    prefix: Option<String>,
     size: Size,
     width: Option<f32>,
     id: Option<Id>,
@@ -69,6 +70,7 @@ impl<'a> TextField<'a> {
             name: String::new(),
             icon: None,
             key: None,
+            prefix: None,
             size: Size::default(),
             width: None,
             id: None,
@@ -95,6 +97,13 @@ impl<'a> TextField<'a> {
     /// The key that brings the keyboard here, quietly at the end.
     pub fn key(mut self, key: impl Into<String>) -> TextField<'a> {
         self.key = Some(key.into());
+        self
+    }
+
+    /// Text quietly before what is typed: a number field's prefix.
+    pub(crate) fn prefix(mut self, prefix: impl Into<String>) -> TextField<'a> {
+        let prefix = prefix.into();
+        self.prefix = (!prefix.is_empty()).then_some(prefix);
         self
     }
 
@@ -136,8 +145,16 @@ impl Widget for TextField<'_> {
                 .x
                 + gap
         });
+        let prefix_w = self.prefix.as_deref().map_or(0.0, |prefix| {
+            ui.painter()
+                .layout_no_wrap(prefix.to_string(), FontId::proportional(size.text()), ink.weak)
+                .size()
+                .x
+                + gap
+        });
         let icon_w = if self.icon.is_some() { size.icon() + gap } else { 0.0 };
-        let text_w = (outer - 2.0 * size.pad() - 2.0 - icon_w - key_w).max(24.0);
+        let text_w = (outer - 2.0 * size.pad() - 2.0 - icon_w - prefix_w - key_w).max(24.0);
+        let prefix = self.prefix;
         let name = if self.name.is_empty() { self.hint.clone() } else { self.name };
         let (icon, key, hint, text) = (self.icon, self.key, self.hint, self.text);
         let id = self.id;
@@ -148,6 +165,9 @@ impl Widget for TextField<'_> {
                     if let Some(icon) = &icon {
                         let (spot, _) = ui.allocate_exact_size(Vec2::splat(size.icon()), Sense::hover());
                         icon(ui.painter(), spot, ink.weak);
+                    }
+                    if let Some(prefix) = &prefix {
+                        ui.label(RichText::new(prefix).font(FontId::proportional(size.text())).color(ink.weak));
                     }
                     let mut edit = TextEdit::singleline(text)
                         .frame(false)
