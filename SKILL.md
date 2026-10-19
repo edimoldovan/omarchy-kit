@@ -107,7 +107,7 @@ Item { open, keyed, hovered: response.hovered(), size: Size::Regular }.paint(ui,
 
 // Every action, found by typing. The app keeps one in its state, toggles it on
 // its key, and hands it every frame the choices that apply where it is.
-let choices = vec![Choice { label: "Reply".into(), key: Some("R".into()) } /* , … */];
+let choices = vec![Choice { label: "Reply".into(), key: Some("R".into()), keywords: "answer respond".into() } /* , … */];
 if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run choices[i] */ }
 ```
 
@@ -152,7 +152,9 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
   chosen one outlined; `.clear(label)` for no colour, `.recent(&colours)`, a
   `#RRGGBB` field under them. `ColorButton::new(&mut Option<Color32>, icon)`
   is a quiet button with the colour under its icon, opening the swatches.
-  `standard_colours()`, `hex(colour)`.
+  `.alpha()` on either lets colours be see-through: an opacity slider, a
+  checkerboard, `#AARRGGBB` in the field. `standard_colours()`, `hex(colour)`,
+  `hex_argb(colour)`, `parse_argb(text)`.
 - `Dialog::new(title).show(ctx, |ui| R) -> DialogResponse { inner, closed }`:
   a card with the title and a ×; modal by default (dimmed window behind, Esc,
   × or a click beside it close it); `.modeless()` beside the work, moved by
@@ -172,10 +174,16 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
   the top, while open: a field with `key` at its end, the choices that match
   what is typed (each with its own key at the end of its line), ↑↓ to walk
   them, Enter or a click to run one, Esc or a click beside it to close. It
-  closes itself when one is run. `Choice { label, key: Option<String> }`.
+  closes itself when one is run. `Choice { label, key: Option<String>,
+  keywords: String }`: a choice matches when every word typed is in its label
+  or its keywords — other editors' words for the action, never shown.
 - Icons: `icons::draw(painter, rect, name, colour)` draws one of the shared
   glyphs (trash, open, find, save, undo, redo, back, gear, keyboard, plus,
-  close, check, bold, italic, …) centred in `rect`; an app
+  close, check, bold, italic, help; the editing tools select, razor, slip,
+  slide, stretch, split, render, snapping; lock, unlock, eye, eye-off, mute,
+  solo, effects; keyframe, keyframe-empty, keyframe-prev, keyframe-next;
+  play, pause, step-back, step-forward, start, end, shuttle-back,
+  shuttle-forward; mark-in, mark-out, insert, overwrite) centred in `rect`; an app
   draws its own glyphs with the same `icons::Pen`, so every icon has one
   stroke weight and size. An element takes any `Fn(&Painter, Rect, Color32)`
   as its icon.

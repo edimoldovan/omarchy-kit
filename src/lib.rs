@@ -61,7 +61,7 @@ pub use number::NumberField;
 pub use palette::{Choice, CommandPalette};
 pub use slider::Slider;
 pub use status::StatusLine;
-pub use swatches::{ColorButton, Swatches, hex, standard_colours};
+pub use swatches::{ColorButton, Swatches, hex, hex_argb, parse_argb, standard_colours};
 pub use tag::TagField;
 pub use toggle::Toggle;
 

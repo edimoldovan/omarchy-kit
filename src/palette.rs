@@ -7,11 +7,15 @@ use egui::{
 
 use crate::{Ink, Item, Size, TextField};
 
-/// One action a palette offers: what it is called, and the key it is also on.
+/// One action a palette offers: what it is called, the key it is also on,
+/// and the other words it is found by — other editors' names for it, say.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Choice {
     pub label: String,
     pub key: Option<String>,
+    /// Words it is also found by, apart from its label: `"razor cut blade"`
+    /// for Split. Never shown.
+    pub keywords: String,
 }
 
 /// A field over the actions that match what is typed in it, each with its
@@ -84,7 +88,7 @@ impl CommandPalette {
             if field.changed() {
                 self.at = 0;
             }
-            let hits = matching(&self.query, choices.iter().map(|c| c.label.as_str()));
+            let hits = matching(&self.query, choices.iter().map(|c| (c.label.as_str(), c.keywords.as_str())));
             let last = hits.len().saturating_sub(1);
             if down {
                 self.at = (self.at + 1).min(last);
@@ -158,24 +162,28 @@ fn line(ui: &mut Ui, choice: &Choice, keyed: bool, follow: bool) -> bool {
     response.clicked()
 }
 
-/// The labels that match `query`, best first, as indexes into them. Every
-/// word typed has to be in a label, in any case. Labels that start with the
-/// first word come first, then those with a word starting with it, then the
-/// rest — each group in the order given.
-fn matching<'a>(query: &str, labels: impl Iterator<Item = &'a str>) -> Vec<usize> {
+/// The entries — labels and their keywords — that match `query`, best first,
+/// as indexes into them. Every word typed has to be in an entry's label or
+/// its keywords, in any case. Labels that start with the first word come
+/// first, then those with a word starting with it, then the other labels
+/// with it, then the entries only their keywords find — each group in the
+/// order given.
+fn matching<'a>(query: &str, entries: impl Iterator<Item = (&'a str, &'a str)>) -> Vec<usize> {
     let words: Vec<String> = query.split_whitespace().map(str::to_lowercase).collect();
-    let mut hits: Vec<(u8, usize)> = labels
+    let mut hits: Vec<(u8, usize)> = entries
         .enumerate()
-        .filter_map(|(i, label)| {
+        .filter_map(|(i, (label, keywords))| {
             let label = label.to_lowercase();
-            if !words.iter().all(|w| label.contains(w.as_str())) {
+            let keywords = keywords.to_lowercase();
+            if !words.iter().all(|w| label.contains(w.as_str()) || keywords.contains(w.as_str())) {
                 return None;
             }
             let rank = match words.first() {
                 None => 0,
                 Some(first) if label.starts_with(first.as_str()) => 0,
                 Some(first) if label.split(|c: char| !c.is_alphanumeric()).any(|w| w.starts_with(first.as_str())) => 1,
-                Some(_) => 2,
+                Some(first) if label.contains(first.as_str()) => 2,
+                Some(_) => 3,
             };
             Some((rank, i))
         })
@@ -195,13 +203,25 @@ mod tests {
     /// every word typed has to be there.
     #[test]
     fn typing_narrows_and_orders_the_choices() {
-        let found = |query: &str| matching(query, LABELS.iter().copied());
+        let found = |query: &str| matching(query, LABELS.iter().map(|label| (*label, "")));
         assert_eq!(found(""), vec![0, 1, 2, 3, 4]);
         assert_eq!(found("re"), vec![0, 4]);
         assert_eq!(found("DRA"), vec![2, 3]);
         assert_eq!(found("go dra"), vec![3]);
         assert_eq!(found("ward"), vec![1]);
         assert!(found("teleport").is_empty());
+    }
+
+    /// A keyword finds an entry its label does not, after the labels that
+    /// match.
+    #[test]
+    fn keywords_find_what_labels_do_not() {
+        let entries = [("Split", "razor cut blade"), ("Ripple delete", "remove gap"), ("Cut", "")];
+        let found = |query: &str| matching(query, entries.iter().copied());
+        assert_eq!(found("razor"), vec![0]);
+        assert_eq!(found("cut"), vec![2, 0], "the label first, then the keyword");
+        assert_eq!(found("RIPPLE gap"), vec![1], "a word from each");
+        assert!(found("razor gap").is_empty());
     }
 
     /// Typed into, walked with the arrows and run with Enter, the palette
@@ -211,7 +231,7 @@ mod tests {
         let ctx = Context::default();
         let choices: Vec<Choice> = LABELS
             .iter()
-            .map(|label| Choice { label: label.to_string(), key: None })
+            .map(|label| Choice { label: label.to_string(), ..Choice::default() })
             .collect();
         let mut palette = CommandPalette::default();
         palette.open();

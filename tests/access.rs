@@ -7,7 +7,7 @@ use egui_kittest::Harness;
 use egui_kittest::kittest::{NodeT, Queryable};
 use omarchy_kit::{
     Button, Checkbox, Choice, ColorButton, CommandPalette, Dialog, Dropdown, NumberField, Slider, Swatches, TagField,
-    TextField, Toggle,
+    TextField, Toggle, parse_argb,
 };
 
 fn toggled<'t>(node: &impl NodeT<'t>) -> Option<Toggled> {
@@ -153,6 +153,33 @@ fn colours_are_named_by_their_hex() {
     assert_eq!(fill.accesskit_node().value().as_deref(), Some("#FF0000"));
 }
 
+/// With `.alpha()`, a see-through colour typed into the field is picked and
+/// shown back as `#AARRGGBB`, and the opacity slider reads its opacity.
+#[test]
+fn swatches_take_see_through_colours() {
+    let mut harness = Harness::new_ui_state(
+        |ui, colour: &mut Option<Color32>| {
+            ui.add(Swatches::new(colour).alpha().id_salt("title"));
+        },
+        Some(Color32::from_rgb(0, 0, 255)),
+    );
+    let field = harness.get_by_role_and_label(Role::TextInput, "#RRGGBB or #AARRGGBB");
+    assert_eq!(field.accesskit_node().value().as_deref(), Some("#0000FF"));
+    field.focus();
+    harness.run();
+    harness.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::A);
+    harness.get_by_role_and_label(Role::TextInput, "#RRGGBB or #AARRGGBB").type_text("#80FF0000");
+    harness.run();
+    harness.key_press(egui::Key::Enter);
+    harness.run();
+    harness.run();
+    assert_eq!(*harness.state(), parse_argb("#80FF0000"));
+    let field = harness.get_by_role_and_label(Role::TextInput, "#RRGGBB or #AARRGGBB");
+    assert_eq!(field.accesskit_node().value().as_deref(), Some("#80FF0000"));
+    let opacity = harness.get_by_role_and_label(Role::Slider, "Opacity");
+    assert_eq!(opacity.accesskit_node().numeric_value().map(f64::round), Some(50.0));
+}
+
 /// A dialog is named by its title, and its × is Close.
 #[test]
 fn a_dialog_is_named_by_its_title() {
@@ -170,8 +197,8 @@ fn a_dialog_is_named_by_its_title() {
 #[test]
 fn the_palette_names_its_field_and_its_actions() {
     let choices = [
-        Choice { label: "New email".into(), key: Some("Ctrl+N".into()) },
-        Choice { label: "Settings".into(), key: None },
+        Choice { label: "New email".into(), key: Some("Ctrl+N".into()), keywords: "compose write".into() },
+        Choice { label: "Settings".into(), ..Choice::default() },
     ];
     let mut palette = CommandPalette::default();
     palette.open();

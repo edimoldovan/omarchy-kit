@@ -177,6 +177,27 @@ pub fn build(rect: Rect, name: &str, color: Color32) -> Option<Vec<Shape>> {
         let rect_filled = |x0: f32, y0: f32, x1: f32, y1: f32| pen.rect_filled(x0, y0, x1, y1);
         let arrow_head =
             |x: f32, y: f32, dx: f32, dy: f32, size: f32| pen.arrow_head(x, y, dx, dy, size);
+        let pts = |v: &[(f32, f32)]| -> Vec<Pos2> { v.iter().map(|&(x, y)| p(x, y)).collect() };
+        let fill = |v: &[(f32, f32)]| push(Shape::convex_polygon(pts(v), color, Stroke::NONE));
+        let outline = |v: &[(f32, f32)], stroke: Stroke| push(Shape::closed_line(pts(v), stroke));
+        let poly = |v: &[(f32, f32)], stroke: Stroke| push(Shape::line(pts(v), stroke));
+        // Points along a circle's arc, angles in turns of π: 0 is right, ½ down.
+        let arc = |cx: f32, cy: f32, r: f32, from: f32, to: f32| -> Vec<(f32, f32)> {
+            (0..=16)
+                .map(|i| {
+                    let a = std::f32::consts::PI * (from + (to - from) * i as f32 / 16.0);
+                    (cx + r * a.cos(), cy + r * a.sin())
+                })
+                .collect()
+        };
+        let eye = || {
+            // An almond: the lids meet at the corners.
+            let lid = |t: f32| (std::f32::consts::PI * t).sin() * 0.24;
+            let mut almond: Vec<(f32, f32)> = (0..=16).map(|i| i as f32 / 16.0).map(|t| (0.1 + 0.8 * t, 0.5 - lid(t))).collect();
+            almond.extend((1..16).rev().map(|i| i as f32 / 16.0).map(|t| (0.1 + 0.8 * t, 0.5 + lid(t))));
+            outline(&almond, thin);
+            circle_filled(p(0.5, 0.5), side * 0.12);
+        };
 
         match name {
         // ----- clipboard -----
@@ -407,6 +428,155 @@ pub fn build(rect: Rect, name: &str, color: Color32) -> Option<Vec<Shape>> {
             line((0.44, 0.2), (0.7, 0.2));
             line((0.3, 0.8), (0.56, 0.8));
         }
+        // ----- editing tools -----
+        "select" => {
+            outline(
+                &[(0.30, 0.12), (0.30, 0.80), (0.46, 0.65), (0.57, 0.88), (0.66, 0.84), (0.55, 0.61), (0.76, 0.61)],
+                thin,
+            );
+        }
+        "razor" => {
+            outline(&[(0.22, 0.16), (0.78, 0.16), (0.78, 0.46), (0.22, 0.46)], thin);
+            line((0.38, 0.31), (0.62, 0.31));
+            line((0.5, 0.56), (0.5, 0.66));
+            line((0.5, 0.76), (0.5, 0.86));
+        }
+        "slip" => {
+            rect_outline(0.12, 0.28, 0.88, 0.72);
+            line((0.34, 0.5), (0.66, 0.5));
+            arrow_head(0.24, 0.5, -1.0, 0.0, 0.12);
+            arrow_head(0.76, 0.5, 1.0, 0.0, 0.12);
+        }
+        "slide" => {
+            rect_outline(0.06, 0.44, 0.28, 0.76);
+            rect_filled(0.36, 0.44, 0.64, 0.76);
+            rect_outline(0.72, 0.44, 0.94, 0.76);
+            line((0.34, 0.24), (0.66, 0.24));
+            arrow_head(0.26, 0.24, -1.0, 0.0, 0.11);
+            arrow_head(0.74, 0.24, 1.0, 0.0, 0.11);
+        }
+        "stretch" => {
+            seg([p(0.16, 0.22), p(0.16, 0.78)], thick);
+            seg([p(0.84, 0.22), p(0.84, 0.78)], thick);
+            poly(&[(0.16, 0.5), (0.28, 0.34), (0.39, 0.66), (0.5, 0.34), (0.61, 0.66), (0.72, 0.34), (0.84, 0.5)], thin);
+        }
+        "split" => {
+            rect_outline(0.08, 0.32, 0.42, 0.68);
+            rect_outline(0.58, 0.32, 0.92, 0.68);
+            seg([p(0.5, 0.12), p(0.5, 0.88)], thick);
+        }
+        "render" => {
+            poly(&[(0.16, 0.56), (0.16, 0.86), (0.84, 0.86), (0.84, 0.56)], thin);
+            line((0.5, 0.70), (0.5, 0.26));
+            arrow_head(0.5, 0.12, 0.0, -1.0, 0.16);
+        }
+        "snapping" => {
+            let mut horseshoe = vec![(0.26, 0.20)];
+            horseshoe.extend(arc(0.5, 0.52, 0.24, 1.0, 0.0));
+            horseshoe.push((0.74, 0.20));
+            poly(&horseshoe, thick);
+            rect_filled(0.17, 0.10, 0.35, 0.24);
+            rect_filled(0.65, 0.10, 0.83, 0.24);
+        }
+
+        // ----- track headers -----
+        "lock" | "unlock" => {
+            rect_filled(0.24, 0.46, 0.76, 0.86);
+            let mut shackle = vec![(0.33, 0.46)];
+            shackle.extend(arc(0.5, 0.30, 0.17, 1.0, 2.0));
+            if name == "lock" {
+                shackle.push((0.67, 0.46));
+            }
+            poly(&shackle, thick);
+        }
+        "eye" => eye(),
+        "eye-off" => {
+            eye();
+            seg([p(0.16, 0.84), p(0.84, 0.16)], thick);
+        }
+        "mute" => {
+            fill(&[(0.12, 0.38), (0.28, 0.38), (0.28, 0.62), (0.12, 0.62)]);
+            fill(&[(0.28, 0.38), (0.50, 0.18), (0.50, 0.82), (0.28, 0.62)]);
+            line((0.62, 0.38), (0.86, 0.62));
+            line((0.86, 0.38), (0.62, 0.62));
+        }
+        "solo" => {
+            poly(&arc(0.5, 0.54, 0.32, 1.0, 2.0), thin);
+            rect_filled(0.14, 0.54, 0.28, 0.82);
+            rect_filled(0.72, 0.54, 0.86, 0.82);
+        }
+        "effects" => {
+            poly(&[(0.50, 0.16), (0.40, 0.16), (0.33, 0.24), (0.33, 0.84)], thin);
+            line((0.22, 0.42), (0.48, 0.42));
+            line((0.54, 0.46), (0.82, 0.84));
+            line((0.82, 0.46), (0.54, 0.84));
+        }
+
+        // ----- keyframes -----
+        "keyframe" => fill(&[(0.5, 0.14), (0.86, 0.5), (0.5, 0.86), (0.14, 0.5)]),
+        "keyframe-empty" => outline(&[(0.5, 0.14), (0.86, 0.5), (0.5, 0.86), (0.14, 0.5)], thin),
+        "keyframe-prev" => {
+            fill(&[(0.64, 0.28), (0.86, 0.5), (0.64, 0.72), (0.42, 0.5)]);
+            arrow_head(0.12, 0.5, -1.0, 0.0, 0.22);
+        }
+        "keyframe-next" => {
+            fill(&[(0.36, 0.28), (0.58, 0.5), (0.36, 0.72), (0.14, 0.5)]);
+            arrow_head(0.88, 0.5, 1.0, 0.0, 0.22);
+        }
+
+        // ----- transport -----
+        "play" => fill(&[(0.28, 0.16), (0.84, 0.5), (0.28, 0.84)]),
+        "pause" => {
+            rect_filled(0.26, 0.18, 0.42, 0.82);
+            rect_filled(0.58, 0.18, 0.74, 0.82);
+        }
+        "step-back" => {
+            fill(&[(0.62, 0.20), (0.22, 0.5), (0.62, 0.80)]);
+            rect_filled(0.68, 0.20, 0.78, 0.80);
+        }
+        "step-forward" => {
+            rect_filled(0.22, 0.20, 0.32, 0.80);
+            fill(&[(0.38, 0.20), (0.78, 0.5), (0.38, 0.80)]);
+        }
+        "start" => {
+            rect_filled(0.18, 0.20, 0.27, 0.80);
+            fill(&[(0.80, 0.20), (0.30, 0.5), (0.80, 0.80)]);
+        }
+        "end" => {
+            fill(&[(0.20, 0.20), (0.70, 0.5), (0.20, 0.80)]);
+            rect_filled(0.73, 0.20, 0.82, 0.80);
+        }
+        "shuttle-back" => {
+            fill(&[(0.50, 0.22), (0.12, 0.5), (0.50, 0.78)]);
+            fill(&[(0.88, 0.22), (0.50, 0.5), (0.88, 0.78)]);
+        }
+        "shuttle-forward" => {
+            fill(&[(0.12, 0.22), (0.50, 0.5), (0.12, 0.78)]);
+            fill(&[(0.50, 0.22), (0.88, 0.5), (0.50, 0.78)]);
+        }
+
+        // ----- source monitor -----
+        "mark-in" => poly(&[(0.64, 0.16), (0.38, 0.16), (0.38, 0.84), (0.64, 0.84)], thick),
+        "mark-out" => poly(&[(0.36, 0.16), (0.62, 0.16), (0.62, 0.84), (0.36, 0.84)], thick),
+        "insert" => {
+            rect_outline(0.06, 0.58, 0.36, 0.86);
+            rect_outline(0.64, 0.58, 0.94, 0.86);
+            line((0.5, 0.12), (0.5, 0.52));
+            arrow_head(0.5, 0.66, 0.0, 1.0, 0.16);
+        }
+        "overwrite" => {
+            rect_outline(0.10, 0.58, 0.90, 0.86);
+            rect_filled(0.32, 0.58, 0.68, 0.86);
+            line((0.5, 0.12), (0.5, 0.40));
+            arrow_head(0.5, 0.54, 0.0, 1.0, 0.16);
+        }
+        "help" => {
+            poly(
+                &[(0.32, 0.34), (0.36, 0.22), (0.5, 0.15), (0.64, 0.22), (0.68, 0.34), (0.62, 0.44), (0.5, 0.52), (0.5, 0.66)],
+                thick,
+            );
+            circle_filled(p(0.5, 0.84), side * 0.07);
+        }
             _ => return None,
         }
     }
@@ -422,7 +592,11 @@ mod tests {
         "filter", "find", "chart", "zoom-in", "zoom-out", "zoom-reset", "duplicate", "rename",
         "trash", "prev", "next", "align-left", "align-center", "align-right", "wrap", "open",
         "new-doc", "fill-color", "back", "gear", "keyboard", "plus", "close", "check", "bold",
-        "italic",
+        "italic", "select", "razor", "slip", "slide", "stretch", "split", "render", "snapping",
+        "lock", "unlock", "eye", "eye-off", "mute", "solo", "effects", "keyframe",
+        "keyframe-empty", "keyframe-prev", "keyframe-next", "play", "pause", "step-back",
+        "step-forward", "start", "end", "shuttle-back", "shuttle-forward", "mark-in", "mark-out",
+        "insert", "overwrite", "help",
     ];
 
     #[test]

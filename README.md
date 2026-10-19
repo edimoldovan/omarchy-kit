@@ -301,8 +301,13 @@ if ui.add(Swatches::new(&mut colour).clear("Automatic")).changed() { /* … */ }
   `.clear(label)` adds on top.
 - The chosen colour is outlined; a pick closes a `ColorButton`'s swatches.
 - `.recent(&colours)` is a row of the colours used last, newest first.
-- `standard_colours()` and `hex(colour)` are there for an app that keeps
-  colours of its own.
+- `.alpha()`, on either, lets a colour be see-through: an opacity slider under
+  the grid, which picking another colour keeps; see-through colours over a
+  checkerboard; and the field taking and showing `#AARRGGBB` as well as
+  `#RRGGBB`.
+- `standard_colours()`, `hex(colour)` (`#RRGGBB`), `hex_argb(colour)` and
+  `parse_argb(text)` (`#AARRGGBB`, opacity first) are there for an app that
+  keeps colours of its own.
 
 ## Dialog
 
@@ -402,12 +407,18 @@ command_palette: CommandPalette,
 self.command_palette.toggle();
 
 // every frame: the choices that apply where the app is
-let choices = vec![Choice { label: "Reply".into(), key: Some("R".into()) } /* , … */];
+let choices = vec![
+    Choice { label: "Reply".into(), key: Some("R".into()), keywords: "answer respond".into() },
+    /* , … */
+];
 if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run choices[i] */ }
 ```
 
 - Up and Down walk the choices, Enter or a click runs one, Esc or a click
   beside it closes it. It closes itself when one is run.
+- A choice matches when every word typed is in its label or its `keywords`,
+  in any case; label matches come first. Keywords are never shown: other
+  editors' words for the action, so "razor" finds Split.
 - `show` draws it while it is open and returns the index of the choice run;
   `.open()`, `.close()`, `.toggle()`, `.is_open()`.
 - It lists the commands that do something where the app is, each with the key
@@ -455,10 +466,22 @@ harness.get_by_role_and_label(Role::Button, "Settings").click();
 ## Across the kit
 
 - Icons: `icons::draw(painter, rect, name, colour)` draws one of the shared
-  glyphs — trash, open, find, save, undo, redo, back, gear, keyboard, bold
-  and the rest — centred in
-  `rect`. An app draws its own glyphs with the same `icons::Pen`, so every
-  icon has one stroke weight and one size. An element takes any
+  glyphs, centred in `rect`:
+  - editing: cut, copy, paste, undo, redo, clear, duplicate, rename, trash,
+    save, open, new-doc, find, filter, sort, sort-asc, sort-desc, chart,
+    zoom-in, zoom-out, zoom-reset, align-left, align-center, align-right,
+    wrap, fill-color, bold, italic;
+  - moving: back, prev, next, plus, close, check, gear, keyboard, help;
+  - editing tools: select, razor, slip, slide, stretch, split, render,
+    snapping;
+  - tracks: lock, unlock, eye, eye-off, mute, solo, effects;
+  - keyframes: keyframe, keyframe-empty, keyframe-prev, keyframe-next;
+  - transport: play, pause, step-back, step-forward, start, end,
+    shuttle-back, shuttle-forward;
+  - source monitor: mark-in, mark-out, insert, overwrite.
+
+  An app draws its own glyphs with the same `icons::Pen`, so every icon has
+  one stroke weight and one size. An element takes any
   `Fn(&Painter, Rect, Color32)` as its icon.
 - Tooltips name the key a control is on, read from the app's keymap rather
   than typed into the text: `"Settings  (Home)"` — on an icon-only button,
