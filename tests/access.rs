@@ -6,8 +6,8 @@ use egui::accesskit::{Role, Toggled};
 use egui_kittest::Harness;
 use egui_kittest::kittest::{NodeT, Queryable};
 use omarchy_kit::{
-    Button, Checkbox, Choice, ColorButton, CommandPalette, Dialog, Dropdown, NumberField, Slider, Swatches, TagField,
-    TextField, Toggle, parse_argb,
+    Button, Checkbox, Choice, ColorButton, CommandPalette, Dialog, Dropdown, NumberField, Section, Slider, Swatches,
+    Switch, TagField, TextField, Toggle, parse_argb,
 };
 
 fn toggled<'t>(node: &impl NodeT<'t>) -> Option<Toggled> {
@@ -208,4 +208,67 @@ fn the_palette_names_its_field_and_its_actions() {
     harness.get_by_role_and_label(Role::TextInput, "Type what to do");
     assert_eq!(toggled(&harness.get_by_role_and_label(Role::Button, "New email")), Some(Toggled::True));
     assert_eq!(toggled(&harness.get_by_role_and_label(Role::Button, "Settings")), Some(Toggled::False));
+}
+
+/// A switch flips by click and by Space, and reports its name and state.
+#[test]
+fn a_switch_flips_by_click_and_by_space() {
+    let mut harness = Harness::new_ui_state(
+        |ui, on: &mut bool| {
+            ui.add(Switch::new(on).name("Snapping"));
+        },
+        false,
+    );
+    let node = harness.get_by_role_and_label(Role::Switch, "Snapping");
+    assert_eq!(toggled(&node), Some(Toggled::False));
+    node.click();
+    harness.run();
+    assert!(*harness.state());
+    let node = harness.get_by_role_and_label(Role::Switch, "Snapping");
+    assert_eq!(toggled(&node), Some(Toggled::True));
+    node.focus();
+    harness.run();
+    harness.key_press(egui::Key::Space);
+    harness.run();
+    assert!(!*harness.state(), "Space flips it back");
+}
+
+/// A section folds and unfolds by click and by keyboard; switched off, its
+/// body is disabled with its values kept; its reset is reported.
+#[test]
+fn a_section_folds_switches_and_resets() {
+    let mut harness = Harness::new_ui_state(
+        |ui, (on, amount, reset): &mut (bool, f32, bool)| {
+            let shown = Section::new("color", "Color").switch(on).reset(true).show(ui, |ui| {
+                ui.add(Slider::new(amount, 0.0..=1.0).label("Saturation"));
+            });
+            *reset |= shown.reset;
+        },
+        (true, 0.5, false),
+    );
+    let fold = harness.get_by_role_and_label(Role::Button, "Color");
+    assert_eq!(fold.accesskit_node().data().is_expanded(), Some(true), "open by default");
+    harness.get_by_role_and_label(Role::Slider, "Saturation");
+
+    fold.click();
+    harness.run();
+    assert!(harness.query_by_role_and_label(Role::Slider, "Saturation").is_none(), "folded");
+    let fold = harness.get_by_role_and_label(Role::Button, "Color");
+    assert_eq!(fold.accesskit_node().data().is_expanded(), Some(false));
+    fold.focus();
+    harness.run();
+    harness.key_press(egui::Key::Space);
+    harness.run();
+    harness.get_by_role_and_label(Role::Slider, "Saturation");
+
+    harness.get_by_role_and_label(Role::Switch, "Color section").click();
+    harness.run();
+    assert!(!harness.state().0);
+    let body = harness.get_by_role_and_label(Role::Slider, "Saturation");
+    assert!(body.accesskit_node().is_disabled(), "the body is disabled while off");
+    assert_eq!(body.accesskit_node().numeric_value(), Some(0.5), "and keeps its value");
+
+    harness.get_by_role_and_label(Role::Button, "Reset Color").click();
+    harness.run();
+    assert!(harness.state().2);
 }

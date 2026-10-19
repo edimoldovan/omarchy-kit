@@ -52,7 +52,7 @@ and parade traces, colour wheels, vectorscope targets, the picture.
 ## Widgets
 
 ```rust
-use omarchy_kit::{Button, Checkbox, Choice, ColorButton, CommandPalette, Dialog, Dropdown, Item, NumberField, Size, Slider, StatusLine, Swatches, TagField, TextField, Toggle, field};
+use omarchy_kit::{Button, Checkbox, Choice, ColorButton, CommandPalette, Dialog, Dropdown, Item, NumberField, Section, Size, Slider, StatusLine, Swatches, Switch, TagField, TextField, Toggle, field};
 
 ui.add(Button::new("Send").icon(glyph("send")).primary());
 ui.add(Button::new("Discard"));                                  // secondary is the default
@@ -144,6 +144,15 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
   field's text does, so it lines up with the fields around it.
 - `Checkbox::new(&mut bool, label)`: on or off; a click or Space flips it;
   `.small()`, `.size`.
+- `Switch::new(&mut bool)`: a feature or a group of settings on or off, its
+  settings kept — a pill with a sliding knob; a click or Space flips it;
+  `.name(…)`, `.small()` for a header row.
+- `Section::new(id, title).switch(&mut on).reset(enabled).default_open(b)
+  .show(ui, |ui| R) -> SectionResponse { inner, switched, reset, open }`: a
+  titled group that folds by its chevron and title (remembered per id), with
+  a switch for the whole group and a reset at the far end; while switched
+  off the body draws disabled, its values kept. Named: the title, "TITLE
+  section", "Reset TITLE".
 - `NumberField::new(&mut f32, range)`: one number in the kit's field; Up and
   Down step it (Shift ten, Ctrl a hundred), Enter or leaving takes what was
   typed within the range, Esc puts it back; `.decimals` (0 when unset),
@@ -200,7 +209,9 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
   for the one control a screen leads with.
 - A list entered one item at a time — addresses, labels — is a `TagField`;
   never a `TextField` with commas in it, never hand-drawn chips.
-- Something on or off is a `Checkbox`; a number is a `NumberField` (a `Slider`
+- A single option on or off is a `Checkbox`; a feature or a group of settings
+  on or off, its settings kept, is a `Switch`; an inspector's group of
+  settings is a `Section`. A number is a `NumberField` (a `Slider`
   when it is an amount between two ends); a colour is `Swatches`, or a
   `ColorButton` on a bar.
 - Anything that asks for something is a `Dialog` — never egui's `Window`.

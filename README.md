@@ -23,6 +23,8 @@ Post, Grido and omarchy-kit are made together:
 | [`TextField`](#textfield) | One line of text in a field | Every one-line text input |
 | [`TagField`](#tagfield) | Tags in a field, with the text being typed after them | A list entered one item at a time: the addresses an email goes to, labels |
 | [`Checkbox`](#checkbox) | One thing on or off, with what it is beside it | A setting that is on or off: Match case |
+| [`Switch`](#switch) | A pill with a sliding knob | A feature or a group of settings on or off, its settings kept |
+| [`Section`](#section) | A titled group that folds, with a switch and a reset | An inspector's groups: Transform, Color, Audio |
 | [`NumberField`](#numberfield) | One number, typed or nudged, within its range | A count or a size: decimal places, a font size |
 | [`Toggle`](#toggle) | A few choices, shown side by side as one control | A choice among two to four: All / Unread |
 | [`Dropdown`](#dropdown) | The chosen one of a list, with the list under it | A choice among more than fit side by side |
@@ -206,8 +208,52 @@ if ui.add(Checkbox::new(&mut match_case, "Match case")).changed() { /* … */ }
 - A click anywhere on it, or Space while it has the keyboard, flips it;
   `changed()` when it did.
 - `.small()`, `.size(Size::…)`.
-- Something on or off is a `Checkbox`; a choice between two named things is
-  a `Toggle`.
+- A single option on or off is a `Checkbox`; a feature or a group of settings
+  on or off, its settings kept, is a `Switch`; a choice between two named
+  things is a `Toggle`.
+
+## Switch
+
+A feature, or a whole group of settings, on or off — its settings kept
+either way: a pill whose knob slides across, the accent while on.
+
+```rust
+use omarchy_kit::Switch;
+
+if ui.add(Switch::new(&mut snapping).name("Snapping")).changed() { /* … */ }
+```
+
+- A click, or Space while it has the keyboard, flips it; `changed()` when it
+  did.
+- `.name(…)` is its name to a screen reader and a test; it shows no text of
+  its own.
+- `.small()` fits a header row; `.size(Size::…)`.
+
+## Section
+
+A titled group of settings that folds — an inspector's Transform, Color,
+Audio — with a switch for the whole group and a reset at the header's far
+end.
+
+```rust
+use omarchy_kit::Section;
+
+let shown = Section::new("color", "Color").switch(&mut grade.on).reset(grade != Grade::default()).show(ui, |ui| {
+    ui.add(Slider::new(&mut grade.saturation, 0.0..=2.0).label("Saturation"));
+});
+if shown.reset { grade = Grade::default(); }
+```
+
+- The chevron and the title fold it, by a click or Space; whether it is open
+  is remembered per id. It starts open; `.default_open(false)` starts it
+  folded.
+- `.switch(&mut on)` turns the whole group on and off. While it is off, the
+  body draws disabled, its values still shown and kept.
+- `.reset(enabled)` is a quiet reset button, clickable while `enabled`.
+- `show` returns `SectionResponse { inner, switched, reset, open }`; `inner`
+  is what the body returned, `None` while folded.
+- Names: the fold is the title, with its open state; the switch is
+  "TITLE section"; the reset is "Reset TITLE".
 
 ## NumberField
 
@@ -445,6 +491,8 @@ harness.get_by_role_and_label(Role::Button, "Settings").click();
 |---|---|---|---|
 | Button | Button | its label; its `.tip()` when icon-only | — |
 | Checkbox | CheckBox | its label | on or off |
+| Switch | Switch | `.name()` | on or off |
+| Section | the fold a Button, the switch a Switch, the reset a Button | the title; `"TITLE section"`; `"Reset TITLE"` | open or folded |
 | Toggle | a RadioButton per option | the option | the chosen one on |
 | Slider | Slider | `.name()`, else its label | the amount |
 | Dropdown | ComboBox; each line of the open list a Button | `.name()`, else the placeholder | the chosen option |
