@@ -35,6 +35,7 @@ pub struct Button<'a> {
     size: Size,
     selected: bool,
     width: Option<f32>,
+    bar: Option<Color32>,
 }
 
 impl<'a> Button<'a> {
@@ -48,6 +49,7 @@ impl<'a> Button<'a> {
             size: Size::default(),
             selected: false,
             width: None,
+            bar: None,
         }
     }
 
@@ -116,6 +118,13 @@ impl<'a> Button<'a> {
         self.width = Some(width);
         self
     }
+
+    /// A bar of `colour` along its bottom edge: the colour a sheet's tab was
+    /// given. Nothing when `None`.
+    pub fn bar(mut self, colour: Option<Color32>) -> Button<'a> {
+        self.bar = colour;
+        self
+    }
 }
 
 impl Widget for Button<'_> {
@@ -180,6 +189,15 @@ impl Widget for Button<'_> {
                 small,
                 fade(text.gamma_multiply(0.6)),
             );
+        }
+        // Inset by the corner, so the bar stays inside the button's curve.
+        if let Some(colour) = self.bar {
+            let inset = size.radius();
+            let bar = Rect::from_min_max(
+                Pos2::new(rect.left() + inset, rect.bottom() - 3.0),
+                Pos2::new(rect.right() - inset, rect.bottom()),
+            );
+            painter.rect_filled(bar, CornerRadius::from(1.5), fade(colour));
         }
         response
     }

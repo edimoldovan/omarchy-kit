@@ -11,9 +11,14 @@
 //! - [`TextField`], and [`field`] for a field that holds more than text;
 //! - [`TagField`]: what has been entered, as tags, with the text being typed
 //!   after them — the addresses an email goes to;
+//! - [`Checkbox`]: one thing on or off;
+//! - [`NumberField`]: one number, typed or nudged, within its range;
 //! - [`Toggle`]: a choice of a few, shown together;
 //! - [`Dropdown`]: a choice among more than fit together, in a list below;
 //! - [`Slider`]: an amount between two ends, dragged;
+//! - [`Swatches`] and [`ColorButton`]: the standard colours to pick from;
+//! - [`Dialog`]: a card over the window, or a panel beside the work;
+//! - [`StatusLine`]: the line along the bottom of a window;
 //! - [`Item`]: how a row, a sidebar entry or a card is marked — open, under the
 //!   pointer, where the keyboard is;
 //! - [`CommandPalette`]: every action there is, found by typing, each with its
@@ -33,20 +38,30 @@ pub mod icons;
 pub mod theme;
 
 mod button;
+mod checkbox;
+mod dialog;
 mod dropdown;
 mod field;
 mod item;
+mod number;
 mod palette;
 mod slider;
+mod status;
+mod swatches;
 mod tag;
 mod toggle;
 
 pub use button::{Button, Kind};
+pub use checkbox::Checkbox;
+pub use dialog::{Dialog, DialogResponse};
 pub use dropdown::Dropdown;
 pub use field::{TextField, field};
 pub use item::Item;
+pub use number::NumberField;
 pub use palette::{Choice, CommandPalette};
 pub use slider::Slider;
+pub use status::StatusLine;
+pub use swatches::{ColorButton, Swatches, hex, standard_colours};
 pub use tag::TagField;
 pub use toggle::Toggle;
 
@@ -107,6 +122,15 @@ impl Size {
             Size::Large => 19.0,
         }
     }
+}
+
+/// A × centred on `centre`, its arms `arm` long: what closes a dialog and
+/// takes a tag off.
+pub(crate) fn cross(painter: &egui::Painter, centre: egui::Pos2, arm: f32, colour: Color32) {
+    let stroke = egui::Stroke::new(1.3_f32, colour);
+    let (a, b) = (egui::Vec2::new(arm, arm), egui::Vec2::new(arm, -arm));
+    painter.line_segment([centre - a, centre + a], stroke);
+    painter.line_segment([centre - b, centre + b], stroke);
 }
 
 /// Text that reads on `fill`: white on a dark colour, near-black on a light

@@ -1,6 +1,6 @@
 ---
 name: omarchy-kit
-description: Build or restyle an egui / eframe UI in the user's own Rust apps with omarchy-kit — the Omarchy theme's colours (with defaults off Omarchy) and the shared buttons, text fields, tag fields, toggle, item marks and command palette drawn from them. Use whenever a Rust desktop UI gets a button, a text field, a search box, a list of tags or email addresses, a toggle or tabs, a toolbar, a sidebar, a list row, a card, a selection or keyboard highlight, a corner radius, a command palette or a list of keyboard shortcuts, or a colour; when a UI should "look consistent", "follow the theme" or "match Post"; and when starting a new egui app.
+description: Build or restyle an egui / eframe UI in the user's own Rust apps with omarchy-kit — the Omarchy theme's colours (with defaults off Omarchy) and the shared buttons, text fields, tag fields, checkboxes, number fields, toggle, swatches, dialogs, status line, item marks and command palette drawn from them. Use whenever a Rust desktop UI gets a button, a text field, a search box, a list of tags or email addresses, a checkbox, a number, a colour, a dialog or a status line, a toggle or tabs, a toolbar, a sidebar, a list row, a card, a selection or keyboard highlight, a corner radius, a command palette or a list of keyboard shortcuts, or a colour; when a UI should "look consistent", "follow the theme" or "match Post"; and when starting a new egui app.
 ---
 
 # omarchy-kit
@@ -44,7 +44,7 @@ exception is a product's own logo, which keeps its own colours.
 ## Widgets
 
 ```rust
-use omarchy_kit::{Button, Choice, CommandPalette, Dropdown, Item, Size, Slider, TagField, TextField, Toggle, field};
+use omarchy_kit::{Button, Checkbox, Choice, ColorButton, CommandPalette, Dialog, Dropdown, Item, NumberField, Size, Slider, StatusLine, Swatches, TagField, TextField, Toggle, field};
 
 ui.add(Button::new("Send").icon(glyph("send")).primary());
 ui.add(Button::new("Discard"));                                  // secondary is the default
@@ -61,6 +61,18 @@ let search = ui.add(TextField::new(&mut query).icon(glyph("find")).hint("Search"
 // typed before the list is used.
 let to = ui.add(TagField::new(&mut addresses, &mut typing).accept(is_address).separators(" ,;").hint("name@example.com"));
 TagField::commit(&mut addresses, &mut typing, is_address);
+
+ui.add(Checkbox::new(&mut match_case, "Match case"));
+ui.add(NumberField::new(&mut size, 6.0..=96.0).suffix("pt"));
+ui.add(ColorButton::new(&mut fill, glyph("fill-color")).clear("No fill").recent(&recent));
+ui.add(Swatches::new(&mut colour).clear("Automatic"));
+
+// A card over the window (modal), or beside the work with .modeless().
+let shown = Dialog::new("Go to").show(ctx, |ui| { /* … */ });
+if shown.closed { /* … */ }
+
+// The line along the bottom of every window.
+StatusLine::new("status").place(where_).message(&status).end(|ui| { /* … */ }).show(ctx);
 
 let mut chosen = usize::from(unread_only);
 if ui.add(Toggle::new(&mut chosen, &["All", "Unread"])).changed() { /* … */ }
@@ -93,7 +105,8 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
 
 - `Button`: `.primary()`, `.quiet()`, `.danger()` (secondary when none);
   `.small()`, `.large()` (regular when none); `.icon(..)`, `.hint(key)`,
-  `.selected(bool)`, `.width(w)`. It is a `Widget`: `ui.add` /
+  `.selected(bool)`, `.width(w)`, `.bar(Some(colour))` (a colour bar along
+  its bottom edge: a sheet tab's colour). It is a `Widget`: `ui.add` /
   `ui.add_enabled` and the usual `Response`.
 - `TextField`: `.hint`, `.icon`, `.key`, `.small()`, `.width`, `.id_salt`. Its
   response is the text's own — `changed`, `has_focus`, `lost_focus`.
@@ -121,6 +134,25 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
   accept)` takes what is still typed. Its response is the typed text's,
   `changed` also when a tag came or went. A tag's text starts where a
   field's text does, so it lines up with the fields around it.
+- `Checkbox::new(&mut bool, label)`: on or off; a click or Space flips it;
+  `.small()`, `.size`.
+- `NumberField::new(&mut f32, range)`: one number in the kit's field; Up and
+  Down step it (Shift ten, Ctrl a hundred), Enter or leaving takes what was
+  typed within the range, Esc puts it back; `.decimals` (0 when unset),
+  `.suffix`, `.small()`, `.width`, `.id_salt`.
+- `Swatches::new(&mut Option<Color32>)`: the standard colours as a grid, the
+  chosen one outlined; `.clear(label)` for no colour, `.recent(&colours)`, a
+  `#RRGGBB` field under them. `ColorButton::new(&mut Option<Color32>, icon)`
+  is a quiet button with the colour under its icon, opening the swatches.
+  `standard_colours()`, `hex(colour)`.
+- `Dialog::new(title).show(ctx, |ui| R) -> DialogResponse { inner, closed }`:
+  a card with the title and a ×; modal by default (dimmed window behind, Esc,
+  × or a click beside it close it); `.modeless()` beside the work, moved by
+  dragging, closed by the × only; `.resizable(size)`; `.width` (380 when
+  unset); `.id_salt`.
+- `StatusLine::new(id).place(..).message(..).after(|ui| ..).end(|ui| ..).show(ctx)`:
+  the line along the bottom; `after` follows the message, `end` sits at the
+  far end, right to left.
 - `field(ui, size, |ui| (focused, R)) -> R`: the field's fill, corner and focus
   outline around whatever the closure draws.
 - `Item { open, keyed, hovered, size }.paint(ui, rect)`: how a selectable thing
@@ -151,6 +183,11 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
   for the one control a screen leads with.
 - A list entered one item at a time — addresses, labels — is a `TagField`;
   never a `TextField` with commas in it, never hand-drawn chips.
+- Something on or off is a `Checkbox`; a number is a `NumberField` (a `Slider`
+  when it is an amount between two ends); a colour is `Swatches`, or a
+  `ColorButton` on a bar.
+- Anything that asks for something is a `Dialog` — never egui's `Window`.
+- Every window has a `StatusLine` along its bottom.
 - Every text input is a `TextField`, or sits in `field`. A choice of a few
   (All / Unread) is a `Toggle`, not tabs or selectable labels.
 - Every selectable row, entry or card is marked with `Item`: what is open is
@@ -172,7 +209,7 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
   than typed into the text: `"Settings  (Home)"`.
 - A choice among more than a `Toggle` holds is a `Dropdown`; never a
   `Button` with a popup of buttons, and never egui's `ComboBox`.
-- No egui `Button`, `small_button`, `selectable_label`, `ComboBox` or framed
+- No egui `Button`, `small_button`, `selectable_label`, `checkbox`, `radio`, `DragValue`, `Window`, `ComboBox` or framed
   `TextEdit` in an app that uses the kit, and no hand-painted buttons. What the
   kit lacks gets added to the kit, with a test, so
   every app gets it.

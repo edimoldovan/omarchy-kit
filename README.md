@@ -13,11 +13,16 @@ fall back to a neutral dark theme.
 | [`Button`](#button) | A button in four kinds and three sizes, with an optional icon and key | Every button |
 | [`TextField`](#textfield) | One line of text in a field | Every one-line text input |
 | [`TagField`](#tagfield) | Tags in a field, with the text being typed after them | A list entered one item at a time: the addresses an email goes to, labels |
+| [`Checkbox`](#checkbox) | One thing on or off, with what it is beside it | A setting that is on or off: Match case |
+| [`NumberField`](#numberfield) | One number, typed or nudged, within its range | A count or a size: decimal places, a font size |
 | [`Toggle`](#toggle) | A few choices, shown side by side as one control | A choice among two to four: All / Unread |
 | [`Dropdown`](#dropdown) | The chosen one of a list, with the list under it | A choice among more than fit side by side |
 | [`Slider`](#slider) | An amount on a track, with a field to type it into | A number between two ends: opacity, volume |
 | [`field`](#field) | The field's frame around anything | An input the others do not cover: a multi-line editor |
 | [`Item`](#item) | The marks of a selectable thing: open, under the pointer, where the keyboard is | List rows, sidebar entries, cards |
+| [`Swatches`](#swatches) · [`ColorButton`](#swatches) | The standard colours to pick from, and the button that opens them | A colour: a fill, a font colour |
+| [`Dialog`](#dialog) | A card over the window, or a panel beside the work | Asking for something: Go to, Find, Format cells |
+| [`StatusLine`](#statusline) | The line along the bottom of a window | Where the app is, and what just happened |
 | [`CommandPalette`](#commandpalette) | Every action, found by typing, each with its key | An app's actions and the keys they are on |
 
 Under all of them: [the theme](#the-theme), and [`Size`](#sizes-and-corners) —
@@ -101,6 +106,8 @@ ui.add(Button::icon_only(glyph("gear")).quiet().selected(on_settings));
   is the icon alone — give it a tooltip with its name.
 - `.hint(key)` shows the key it is also on, quietly after the label.
 - `.selected(true)` marks the quiet tool whose screen is showing.
+- `.bar(Some(colour))` puts a bar of that colour along its bottom edge: the
+  colour a sheet's tab was given.
 - `.width(w)`, `.small()`, `.large()`, `.kind(Kind)`.
 - It is a `Widget`: `ui.add`, `ui.add_enabled`, and the usual `Response`.
 
@@ -157,6 +164,41 @@ TagField::commit(&mut addresses, &mut typing, is_address);
   `request_focus` work on the field, and `changed` also says a tag came or
   went.
 
+## Checkbox
+
+One thing on or off: a box, filled with the accent and ticked while on, and
+what it is beside it.
+
+```rust
+use omarchy_kit::Checkbox;
+
+if ui.add(Checkbox::new(&mut match_case, "Match case")).changed() { /* … */ }
+```
+
+- A click anywhere on it, or Space while it has the keyboard, flips it;
+  `changed()` when it did.
+- `.small()`, `.size(Size::…)`.
+- Something on or off is a `Checkbox`; a choice between two named things is
+  a `Toggle`.
+
+## NumberField
+
+One number in the kit's field, kept within its range.
+
+```rust
+use omarchy_kit::NumberField;
+
+if ui.add(NumberField::new(&mut size, 6.0..=96.0).suffix("pt")).changed() { /* … */ }
+```
+
+- While it has the keyboard, Up and Down move a step, Shift ten, Ctrl a
+  hundred; Enter or leaving takes what was typed, within the range; Esc puts
+  back what it was.
+- `.decimals(n)` sets what is shown and the step — none when unset;
+  `.suffix(text)` follows the number in its field.
+- `.small()`, `.width(w)`, `.id_salt(salt)`; `changed()` whenever the number
+  moved.
+
 ## Toggle
 
 A choice among two to four, shown side by side as one control.
@@ -209,6 +251,75 @@ if ui.add(Slider::new(&mut opacity, 0.0..=100.0).label("Opacity").default(100.0)
 - The fill runs from zero when the range crosses zero, else from the start.
 - `.small()`, `.width(w)`, `.id_salt(salt)`; `changed()` whenever the value
   moved.
+
+## Swatches
+
+The standard colours — greys, then ten hues lightened, plain and darkened —
+as a grid to pick from, with the colours used last under it and a field for
+any colour as `#RRGGBB`. `ColorButton` is the quiet button that opens them,
+with the colour it applies under its icon.
+
+```rust
+use omarchy_kit::{ColorButton, Swatches};
+
+// On a bar: the button, and the swatches below it when clicked.
+if ui.add(ColorButton::new(&mut fill, glyph("fill-color")).clear("No fill").recent(&recent)).changed() { /* … */ }
+
+// In a dialog: the swatches themselves.
+if ui.add(Swatches::new(&mut colour).clear("Automatic")).changed() { /* … */ }
+```
+
+- The colour is an `Option<Color32>`; `None` is no colour, the entry
+  `.clear(label)` adds on top.
+- The chosen colour is outlined; a pick closes a `ColorButton`'s swatches.
+- `.recent(&colours)` is a row of the colours used last, newest first.
+- `standard_colours()` and `hex(colour)` are there for an app that keeps
+  colours of its own.
+
+## Dialog
+
+A card with a title and a × that closes it, around whatever the app puts in
+it.
+
+```rust
+use omarchy_kit::Dialog;
+
+let shown = Dialog::new("Go to").show(ctx, |ui| {
+    ui.add(TextField::new(&mut reference).hint("B12"));
+    ui.add(Button::new("Go").primary()).clicked()
+});
+if shown.closed { /* … */ }
+if shown.inner == Some(true) { /* go */ }
+```
+
+- Modal unless told otherwise: the window behind it is dimmed and takes no
+  clicks; Esc, the × or a click beside it closes it.
+- `.modeless()` keeps it beside the work: the window behind keeps working,
+  it moves by dragging, and only the × closes it. `.resizable(size)` is a
+  modeless panel the user can resize, such as a chart.
+- `.width(w)` — 380 points when unset; `.id_salt(salt)` when two share a
+  title.
+- `show` gives back what the closure returned, and `closed` when it was
+  asked to close; the app decides what closing means.
+
+## StatusLine
+
+The line along the bottom of a window: where the app is, quietly, then what
+just happened; at the far end, what the app keeps there.
+
+```rust
+use omarchy_kit::StatusLine;
+
+StatusLine::new("status")
+    .place("ed@acme.com — 3 unread")
+    .message(&self.status)
+    .end(|ui| { ui.label("Sum: 12"); })
+    .show(ctx);
+```
+
+- `.after(|ui| …)` follows the message: a button that puts something right.
+- `.end(|ui| …)` sits at the far end, drawn right to left: counts, a zoom.
+- Every window of an app that uses the kit has one.
 
 ## field
 

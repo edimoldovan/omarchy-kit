@@ -270,13 +270,13 @@ fn value_at(f: f32, lo: f32, hi: f32) -> f32 {
 }
 
 /// `value` rounded to `decimals` places.
-fn quantize(value: f32, decimals: usize) -> f32 {
+pub(crate) fn quantize(value: f32, decimals: usize) -> f32 {
     let step = 10f32.powi(decimals as i32);
     (value * step).round() / step
 }
 
 /// The value as the field shows it.
-fn format(value: f32, decimals: usize) -> String {
+pub(crate) fn format(value: f32, decimals: usize) -> String {
     format!("{value:.decimals$}")
 }
 
