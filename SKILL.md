@@ -37,9 +37,15 @@ if let Some(palette) = self.theme_watcher.changed(ctx) {
 
 `fonts::install(ctx)`, once at start, adds the system's symbol fonts behind
 egui's own, so symbols such as ▾ and ✕ do not render as empty boxes.
-`theme::Palette` is `{ bg, fg, accent }`; `theme::mix(a, b, t)` gives every
-in-between shade. Colours come from these and from `ui.visuals()` only. The one
-exception is a product's own logo, which keeps its own colours.
+`theme::Palette` is `{ bg, fg, accent, ansi }`; `theme::mix(a, b, t)` gives
+every in-between shade. `ansi` is the theme's sixteen terminal colours (0–7
+normal, 8–15 bright); `red()`, `green()`, `yellow()`, `blue()`, `magenta()`
+and `cyan()` colour what an app shows by kind — clips, titles, meters,
+errors. An app with its own look off Omarchy uses `theme::load_or(&fallback)`
+and `ThemeWatcher::with_fallback(fallback)`. Colours come from these and from
+`ui.visuals()` only, with two exceptions: a product's own logo, and colours
+that show a colour itself — hue and saturation rails, red/green/blue curves
+and parade traces, colour wheels, vectorscope targets, the picture.
 
 ## Widgets
 

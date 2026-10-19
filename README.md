@@ -67,10 +67,21 @@ if let Some(palette) = self.theme_watcher.changed(ctx) {
 - `fonts::install(ctx)`, once when the app starts, adds the system's symbol
   fonts behind egui's own, so symbols such as ▾ and ✕ do not render as empty
   boxes.
-- `theme::Palette` is `{ bg, fg, accent }`; `theme::mix(a, b, t)` gives every
-  shade between two of them.
-- Colours come from the palette and from `ui.visuals()` only. The one exception
-  is a product's own logo, which keeps its own colours.
+- `theme::Palette` is `{ bg, fg, accent, ansi }`; `theme::mix(a, b, t)` gives
+  every shade between two of them.
+- `ansi` is the theme's sixteen terminal colours, 0–7 normal and 8–15 bright,
+  read from `colors.toml` or alacritty's normal and bright colours; `red()`,
+  `green()`, `yellow()`, `blue()`, `magenta()` and `cyan()` are the normal
+  ones. They are for what an app colours by kind: clips, titles, meters,
+  errors.
+- An app with a look of its own off Omarchy passes it:
+  `theme::load_or(&fallback)` and `ThemeWatcher::with_fallback(fallback)` use
+  that palette when there is no theme, and its colours where a theme leaves
+  one out.
+- Colours come from the palette and from `ui.visuals()` only, with two
+  exceptions: a product's own logo, and colours that show a colour itself —
+  hue and saturation rails, red/green/blue curves and parade traces, colour
+  wheels, vectorscope targets, the picture.
 - `omarchy_kit::on(fill)` is the text colour that reads on a fill.
 
 ## Sizes and corners

@@ -3,8 +3,10 @@
 //! Omarchy keeps the active theme at `~/.local/state/omarchy/current/theme/`.
 //! We read `colors.toml` (flat keys, carries the theme's real `accent`) and
 //! fall back to parsing `alacritty.toml` for older setups; machines without
-//! Omarchy get a neutral dark scheme. Every surface derives from background/
-//! foreground/accent mixes, so any theme just works — light ones included.
+//! Omarchy get a neutral dark scheme, or the app's own fallback. Every
+//! surface derives from background/foreground/accent mixes, so any theme just
+//! works — light ones included. The theme's sixteen terminal colours come
+//! along, for what an app colours by kind: clips, titles, meters, errors.
 //!
 //! A watcher polls the theme directory's identity and reloads in place, so a
 //! theme switch restyles the app live along with the rest of the desktop.
@@ -19,33 +21,93 @@ pub struct Palette {
     pub bg: Color32,
     pub fg: Color32,
     pub accent: Color32,
+    /// The theme's sixteen terminal colours: 0–7 normal, 8–15 bright, in the
+    /// terminal's order — black, red, green, yellow, blue, magenta, cyan,
+    /// white.
+    pub ansi: [Color32; 16],
 }
+
+impl Palette {
+    pub fn red(&self) -> Color32 {
+        self.ansi[1]
+    }
+
+    pub fn green(&self) -> Color32 {
+        self.ansi[2]
+    }
+
+    pub fn yellow(&self) -> Color32 {
+        self.ansi[3]
+    }
+
+    pub fn blue(&self) -> Color32 {
+        self.ansi[4]
+    }
+
+    pub fn magenta(&self) -> Color32 {
+        self.ansi[5]
+    }
+
+    pub fn cyan(&self) -> Color32 {
+        self.ansi[6]
+    }
+}
+
+/// The terminal's names for its colours, as alacritty keys them.
+const NAMES: [&str; 8] = ["black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"];
 
 fn theme_dir() -> Option<PathBuf> {
     let home = std::env::var_os("HOME")?;
     Some(Path::new(&home).join(".local/state/omarchy/current/theme"))
 }
 
+/// The Omarchy theme's palette, or the kit's neutral dark one off Omarchy.
 pub fn load() -> Palette {
-    theme_dir().map(|d| load_from(&d)).unwrap_or_else(fallback)
+    load_or(&fallback())
 }
 
-fn load_from(dir: &Path) -> Palette {
-    read_colors_toml(&dir.join("colors.toml"))
-        .or_else(|| read_alacritty(&dir.join("alacritty.toml")))
-        .unwrap_or_else(fallback)
+/// The Omarchy theme's palette, or `fallback` when there is no theme or its
+/// files can't be read. A colour the theme leaves out is `fallback`'s.
+pub fn load_or(fallback: &Palette) -> Palette {
+    theme_dir().map(|d| load_from(&d, fallback)).unwrap_or(*fallback)
+}
+
+fn load_from(dir: &Path, fallback: &Palette) -> Palette {
+    read_colors_toml(&dir.join("colors.toml"), fallback)
+        .or_else(|| read_alacritty(&dir.join("alacritty.toml"), fallback))
+        .unwrap_or(*fallback)
 }
 
 fn fallback() -> Palette {
+    let rgb = Color32::from_rgb;
     Palette {
-        bg: Color32::from_rgb(18, 20, 24),
-        fg: Color32::from_rgb(200, 205, 212),
-        accent: Color32::from_rgb(95, 135, 190),
+        bg: rgb(18, 20, 24),
+        fg: rgb(200, 205, 212),
+        accent: rgb(95, 135, 190),
+        ansi: [
+            rgb(18, 20, 24),
+            rgb(196, 90, 90),
+            rgb(110, 160, 100),
+            rgb(196, 160, 66),
+            rgb(100, 130, 180),
+            rgb(170, 110, 170),
+            rgb(90, 160, 170),
+            rgb(200, 205, 212),
+            rgb(90, 96, 106),
+            rgb(220, 110, 110),
+            rgb(140, 190, 120),
+            rgb(220, 190, 100),
+            rgb(95, 135, 190),
+            rgb(200, 140, 200),
+            rgb(120, 190, 200),
+            rgb(230, 232, 236),
+        ],
     }
 }
 
-/// Omarchy's own palette file: flat `background` / `foreground` / `accent`.
-fn read_colors_toml(path: &Path) -> Option<Palette> {
+/// Omarchy's own palette file: flat `background` / `foreground` / `accent`
+/// and `color0`–`color15`.
+fn read_colors_toml(path: &Path, fallback: &Palette) -> Option<Palette> {
     let doc: toml::Table = std::fs::read_to_string(path).ok()?.parse().ok()?;
     let color = |key: &str| doc.get(key)?.as_str().and_then(hex_color);
     let bg = color("background")?;
@@ -54,23 +116,29 @@ fn read_colors_toml(path: &Path) -> Option<Palette> {
     let accent = color("accent")
         .or_else(|| color("color12"))
         .or_else(|| color("color4"))
-        .unwrap_or_else(|| fallback().accent);
-    Some(Palette { bg, fg, accent })
+        .unwrap_or(fallback.accent);
+    let ansi = std::array::from_fn(|i| color(&format!("color{i}")).unwrap_or(fallback.ansi[i]));
+    Some(Palette { bg, fg, accent, ansi })
 }
 
 /// The alacritty scheme every Omarchy theme also ships (viode reads this one).
-fn read_alacritty(path: &Path) -> Option<Palette> {
+fn read_alacritty(path: &Path, fallback: &Palette) -> Option<Palette> {
     let doc: toml::Table = std::fs::read_to_string(path).ok()?.parse().ok()?;
     let colors = doc.get("colors")?;
     let get = |section: &str, key: &str| -> Option<Color32> {
         colors.get(section)?.get(key)?.as_str().and_then(hex_color)
     };
+    let ansi = std::array::from_fn(|i| {
+        let section = if i < 8 { "normal" } else { "bright" };
+        get(section, NAMES[i % 8]).unwrap_or(fallback.ansi[i])
+    });
     Some(Palette {
         bg: get("primary", "background")?,
         fg: get("primary", "foreground")?,
         accent: get("bright", "blue")
             .or_else(|| get("normal", "blue"))
-            .unwrap_or_else(|| fallback().accent),
+            .unwrap_or(fallback.accent),
+        ansi,
     })
 }
 
@@ -146,19 +214,30 @@ fn identity(dir: &Path) -> (Option<PathBuf>, Option<SystemTime>, Option<SystemTi
 /// the app follows a theme switch live, like the rest of the desktop.
 pub struct ThemeWatcher {
     dir: Option<PathBuf>,
+    fallback: Palette,
     seen: (Option<PathBuf>, Option<SystemTime>, Option<SystemTime>),
     last_check: Instant,
 }
 
 impl ThemeWatcher {
     pub fn new() -> ThemeWatcher {
-        let dir = theme_dir();
+        ThemeWatcher::with_fallback(fallback())
+    }
+
+    /// A watcher whose palettes take `fallback`'s colours where the theme
+    /// has none, as [`load_or`] does.
+    pub fn with_fallback(fallback: Palette) -> ThemeWatcher {
+        ThemeWatcher::at(theme_dir(), fallback)
+    }
+
+    fn at(dir: Option<PathBuf>, fallback: Palette) -> ThemeWatcher {
         let seen = dir
             .as_deref()
             .map(identity)
             .unwrap_or((None, None, None));
         ThemeWatcher {
             dir,
+            fallback,
             seen,
             last_check: Instant::now(),
         }
@@ -180,7 +259,7 @@ impl ThemeWatcher {
             return None;
         }
         self.seen = now;
-        Some(load_from(dir))
+        Some(load_from(dir, &self.fallback))
     }
 }
 
@@ -203,9 +282,80 @@ mod tests {
             "accent = \"#4385BE\"\nforeground = \"#CECDC3\"\nbackground = \"#100F0F\"\n",
         )
         .unwrap();
-        let p = load_from(&dir);
+        let p = load_from(&dir, &fallback());
         assert_eq!(p.bg, Color32::from_rgb(0x10, 0x0F, 0x0F));
         assert_eq!(p.accent, Color32::from_rgb(0x43, 0x85, 0xBE));
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// The sixteen colours, from either file; one the theme leaves out is the
+    /// fallback's.
+    #[test]
+    fn reads_the_sixteen_colours_from_either_file() {
+        let dir = std::env::temp_dir().join("omarchy-kit-theme-test-ansi");
+        std::fs::create_dir_all(&dir).unwrap();
+        let mut colors = "background = \"#100F0F\"\nforeground = \"#CECDC3\"\n".to_string();
+        for i in 0..16 {
+            if i != 13 {
+                colors += &format!("color{i} = \"#0000{i:02X}\"\n");
+            }
+        }
+        std::fs::write(dir.join("colors.toml"), colors).unwrap();
+        let p = load_from(&dir, &fallback());
+        assert_eq!(p.yellow(), Color32::from_rgb(0, 0, 3));
+        assert_eq!(p.ansi[15], Color32::from_rgb(0, 0, 15));
+        assert_eq!(p.ansi[13], fallback().ansi[13], "left out, so the fallback's");
+
+        std::fs::remove_file(dir.join("colors.toml")).unwrap();
+        std::fs::write(
+            dir.join("alacritty.toml"),
+            "[colors.primary]\nbackground = \"#121212\"\nforeground = \"#bebebe\"\n\
+             [colors.normal]\nred = \"#aa0000\"\ncyan = \"#00aaaa\"\n[colors.bright]\nred = \"#ff0000\"\n",
+        )
+        .unwrap();
+        let p = load_from(&dir, &fallback());
+        assert_eq!(p.red(), Color32::from_rgb(0xaa, 0, 0));
+        assert_eq!(p.cyan(), Color32::from_rgb(0, 0xaa, 0xaa));
+        assert_eq!(p.ansi[9], Color32::from_rgb(0xff, 0, 0));
+        assert_eq!(p.green(), fallback().green());
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// With no theme, the app's own palette, exactly.
+    #[test]
+    fn no_theme_gives_the_apps_fallback() {
+        let rgb = Color32::from_rgb;
+        let mut ansi = [rgb(0, 0, 0); 16];
+        ansi[2] = rgb(110, 160, 100);
+        ansi[3] = rgb(196, 160, 66);
+        ansi[4] = rgb(100, 130, 180);
+        ansi[5] = rgb(170, 110, 170);
+        ansi[6] = rgb(90, 160, 170);
+        let viode = Palette { bg: rgb(18, 20, 24), fg: rgb(190, 196, 205), accent: rgb(120, 160, 220), ansi };
+        let none = std::env::temp_dir().join("omarchy-kit-theme-test-none");
+        std::fs::remove_dir_all(&none).ok();
+        assert_eq!(load_from(&none, &viode), viode);
+    }
+
+    /// A theme switch hands back the new theme's colours.
+    #[test]
+    fn a_theme_switch_changes_the_colours() {
+        let dir = std::env::temp_dir().join("omarchy-kit-theme-test-switch");
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("colors.toml");
+        let write = |blue: &str, at: u64| {
+            let text = format!("background = \"#100F0F\"\nforeground = \"#CECDC3\"\ncolor4 = \"{blue}\"\n");
+            std::fs::write(&file, text).unwrap();
+            let when = SystemTime::UNIX_EPOCH + Duration::from_secs(at);
+            std::fs::File::options().write(true).open(&file).unwrap().set_modified(when).unwrap();
+        };
+        write("#0000AA", 1_000_000);
+        let mut watcher = ThemeWatcher::at(Some(dir.clone()), fallback());
+        let ctx = egui::Context::default();
+        write("#0000FF", 2_000_000);
+        watcher.last_check = Instant::now() - Duration::from_secs(2);
+        let p = watcher.changed(&ctx).expect("the theme changed");
+        assert_eq!(p.blue(), Color32::from_rgb(0, 0, 0xFF));
         std::fs::remove_dir_all(&dir).ok();
     }
 
@@ -218,13 +368,13 @@ mod tests {
             "[colors.primary]\nbackground = \"#121212\"\nforeground = \"#bebebe\"\n[colors.bright]\nblue = \"#f59e0b\"\n",
         )
         .unwrap();
-        let p = load_from(&dir);
+        let p = load_from(&dir, &fallback());
         assert_eq!(p.accent, Color32::from_rgb(0xf5, 0x9e, 0x0b));
         std::fs::remove_dir_all(&dir).ok();
 
         let empty = std::env::temp_dir().join("omarchy-kit-theme-test-3");
         std::fs::create_dir_all(&empty).unwrap();
-        assert_eq!(load_from(&empty), fallback());
+        assert_eq!(load_from(&empty, &fallback()), fallback());
         std::fs::remove_dir_all(&empty).ok();
     }
 
@@ -234,6 +384,7 @@ mod tests {
             bg: Color32::from_rgb(0xF2, 0xF0, 0xE5),
             fg: Color32::from_rgb(0x10, 0x0F, 0x0F),
             accent: Color32::from_rgb(0x20, 0x5E, 0xA6),
+            ..fallback()
         };
         assert!(!visuals(&light).dark_mode);
         assert!(visuals(&fallback()).dark_mode);
