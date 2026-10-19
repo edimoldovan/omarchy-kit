@@ -358,6 +358,55 @@ pub fn build(rect: Rect, name: &str, color: Color32) -> Option<Vec<Shape>> {
             line((0.62, 0.10), (0.62, 0.30));
             line((0.62, 0.30), (0.80, 0.30));
         }
+        // ----- the window -----
+        "back" => {
+            line((0.22, 0.5), (0.84, 0.5));
+            push(Shape::line(vec![p(0.46, 0.26), p(0.20, 0.5), p(0.46, 0.74)], thick));
+        }
+        "gear" => {
+            circle_stroke(p(0.5, 0.5), side * 0.12, thin);
+            circle_stroke(p(0.5, 0.5), side * 0.27, thin);
+            for i in 0..6 {
+                let (sin, cos) = (std::f32::consts::TAU * i as f32 / 6.0).sin_cos();
+                line(
+                    (0.5 + 0.27 * cos, 0.5 + 0.27 * sin),
+                    (0.5 + 0.40 * cos, 0.5 + 0.40 * sin),
+                );
+            }
+        }
+        "keyboard" => {
+            rect_outline(0.08, 0.18, 0.92, 0.82);
+            for x in [0.25, 0.42, 0.58, 0.75] {
+                circle_filled(p(x, 0.36), side * 0.045);
+            }
+            for x in [0.33, 0.5, 0.67] {
+                circle_filled(p(x, 0.5), side * 0.045);
+            }
+            line((0.3, 0.66), (0.7, 0.66));
+        }
+        "plus" => {
+            seg([p(0.5, 0.18), p(0.5, 0.82)], thick);
+            seg([p(0.18, 0.5), p(0.82, 0.5)], thick);
+        }
+        "close" => {
+            line((0.26, 0.26), (0.74, 0.74));
+            line((0.74, 0.26), (0.26, 0.74));
+        }
+        "check" => {
+            push(Shape::line(vec![p(0.2, 0.52), p(0.42, 0.74), p(0.82, 0.28)], thick));
+        }
+        // ----- type -----
+        "bold" => {
+            push(Shape::line(
+                vec![p(0.3, 0.5), p(0.58, 0.5), p(0.67, 0.42), p(0.67, 0.28), p(0.58, 0.2), p(0.3, 0.2), p(0.3, 0.8), p(0.62, 0.8), p(0.72, 0.71), p(0.72, 0.59), p(0.62, 0.5)],
+                thick,
+            ));
+        }
+        "italic" => {
+            seg([p(0.56, 0.2), p(0.44, 0.8)], thick);
+            line((0.44, 0.2), (0.7, 0.2));
+            line((0.3, 0.8), (0.56, 0.8));
+        }
             _ => return None,
         }
     }
@@ -372,7 +421,8 @@ mod tests {
         "cut", "copy", "paste", "save", "undo", "redo", "clear", "sort", "sort-asc", "sort-desc",
         "filter", "find", "chart", "zoom-in", "zoom-out", "zoom-reset", "duplicate", "rename",
         "trash", "prev", "next", "align-left", "align-center", "align-right", "wrap", "open",
-        "new-doc", "fill-color",
+        "new-doc", "fill-color", "back", "gear", "keyboard", "plus", "close", "check", "bold",
+        "italic",
     ];
 
     #[test]

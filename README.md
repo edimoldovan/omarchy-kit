@@ -394,7 +394,8 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
 ## Across the kit
 
 - Icons: `icons::draw(painter, rect, name, colour)` draws one of the shared
-  glyphs — trash, open, find, save, undo, redo and the rest — centred in
+  glyphs — trash, open, find, save, undo, redo, back, gear, keyboard, bold
+  and the rest — centred in
   `rect`. An app draws its own glyphs with the same `icons::Pen`, so every
   icon has one stroke weight and one size. An element takes any
   `Fn(&Painter, Rect, Color32)` as its icon.
