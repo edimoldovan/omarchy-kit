@@ -13,7 +13,10 @@ const MARGIN: f32 = 16.0;
 /// Modal unless told otherwise: it sits over the window, which is dimmed
 /// behind it and takes no clicks; Esc, the × or a click beside it closes
 /// it. A modeless one stays beside the work — the window behind it keeps
-/// working, it can be moved by dragging, and only the × closes it.
+/// working, it can be moved by dragging, and only the × closes it. Until it
+/// is dragged it stays centred 96 points under the window's top, however
+/// the window changes size; after, it keeps where it was left, inside the
+/// window.
 #[must_use = "a dialog is drawn with dialog.show(ctx, …)"]
 pub struct Dialog {
     title: String,
@@ -101,26 +104,46 @@ impl Dialog {
                 });
             });
             ui.add_space(8.0);
-            add(ui)
+            let inner = add(ui);
+            // Where it is, for a screen reader and a test to find it.
+            let rect = ui.min_rect();
+            ui.ctx().accesskit_node_builder(ui.id(), |node| {
+                node.set_bounds(egui::accesskit::Rect {
+                    x0: rect.min.x.into(),
+                    y0: rect.min.y.into(),
+                    x1: rect.max.x.into(),
+                    y1: rect.max.y.into(),
+                });
+            });
+            inner
         };
         if self.modal {
             let shown = Modal::new(self.id).frame(card(ctx)).show(ctx, body);
             let asked = shown.should_close();
             return DialogResponse { inner: Some(shown.inner), closed: closed || asked };
         }
-        let screen = ctx.content_rect();
+        // Centred under the window's top, wherever that is as the window
+        // changes size, until the user drags it; then where they left it,
+        // held inside the window.
+        let home = ctx.content_rect().center_top() + Vec2::new(0.0, 96.0);
+        let moved_id = self.id.with("moved");
+        let moved = ctx.data(|d| d.get_temp::<bool>(moved_id)).unwrap_or(false);
         let mut window = egui::Window::new(&self.title)
             .id(self.id)
             .title_bar(false)
             .collapsible(false)
             .frame(card(ctx))
             .pivot(Align2::CENTER_TOP)
-            .default_pos(screen.center_top() + Vec2::new(0.0, 96.0));
+            .constrain(true);
+        window = if moved { window.default_pos(home) } else { window.current_pos(home) };
         window = match resizable {
             Some(size) => window.resizable(true).default_size(size),
             None => window.resizable(false),
         };
         let shown = window.show(ctx, body);
+        if shown.as_ref().is_some_and(|s| s.response.drag_started() || s.response.dragged()) {
+            ctx.data_mut(|d| d.insert_temp(moved_id, true));
+        }
         DialogResponse { inner: shown.and_then(|s| s.inner), closed }
     }
 }

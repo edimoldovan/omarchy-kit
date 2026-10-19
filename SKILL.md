@@ -180,7 +180,9 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
 - `Dialog::new(title).show(ctx, |ui| R) -> DialogResponse { inner, closed }`:
   a card with the title and a ×; modal by default (dimmed window behind, Esc,
   × or a click beside it close it); `.modeless()` beside the work, moved by
-  dragging, closed by the × only; `.resizable(size)`; `.width` (380 when
+  dragging, closed by the × only — centred under the window's top as the
+  window changes size until dragged, then kept where it was left;
+  `.resizable(size)`; `.width` (380 when
   unset); `.id_salt`.
 - `StatusLine::new(id).place(..).message(..).after(|ui| ..).end(|ui| ..).show(ctx)`:
   the line along the bottom; `after` follows the message, `end` sits at the

@@ -420,8 +420,11 @@ if shown.inner == Some(true) { /* go */ }
 - Modal unless told otherwise: the window behind it is dimmed and takes no
   clicks; Esc, the × or a click beside it closes it.
 - `.modeless()` keeps it beside the work: the window behind keeps working,
-  it moves by dragging, and only the × closes it. `.resizable(size)` is a
-  modeless panel the user can resize, such as a chart.
+  it moves by dragging, and only the × closes it. Until it is dragged it
+  stays centred 96 points under the window's top, however the window
+  changes size; after, it keeps where it was left, inside the window.
+  `.resizable(size)` is a modeless panel the user can resize, such as a
+  chart.
 - `.width(w)` — 380 points when unset; `.id_salt(salt)` when two share a
   title.
 - `show` gives back what the closure returned, and `closed` when it was
