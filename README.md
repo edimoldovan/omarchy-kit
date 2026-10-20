@@ -92,6 +92,8 @@ if let Some(palette) = self.theme_watcher.changed(ctx) {
   wheels, vectorscope targets, the picture.
 - `omarchy_kit::on(fill)` is the text colour that reads on a fill.
 
+<img src="docs/theme.png" width="616" alt="The theme's background, text and accent, and its sixteen terminal colours">
+
 ## Sizes and corners
 
 | `Size` | Height | Corner | Text | For |
@@ -100,6 +102,8 @@ if let Some(palette) = self.theme_watcher.changed(ctx) {
 | `Small` | 26 | 7 | 12.5 | Lists, dense bars, and what sits inside another element |
 | `Regular` — the default | 32 | 8 | 14 | Everything else |
 | `Large` | 42 | 10 | 15 | The one control a screen leads with, such as Compose |
+
+<img src="docs/sizes.png" width="616" alt="Buttons at the four sizes">
 
 - An element is regular unless told otherwise: `.small()`, `.large()`, or
   `.size(Size::…)`.
@@ -131,6 +135,8 @@ ui.add(Button::new("Compose").primary().large().width(ui.available_width()));
 ui.add(Button::icon_only(glyph("gear")).quiet().selected(on_settings));
 ```
 
+<img src="docs/button.png" width="616" alt="Buttons: primary, secondary, quiet with a key, danger; icon-only, selected, with a colour bar; large">
+
 - `.icon(glyph)` puts the app's icon before the label; `Button::icon_only`
   is the icon alone — give it `.tip(name)`.
 - `.tip(text)` is what it says while the pointer is on it. On an icon-only
@@ -148,6 +154,8 @@ ui.add(Button::icon_only(glyph("gear")).quiet().selected(on_settings));
 
 Every one-line text input is a `TextField`: a quiet fill, and the accent
 outline while it has the keyboard.
+
+<img src="docs/textfield.png" width="616" alt="Text fields: with an icon and a key, with a hint, filled">
 
 ```rust
 use omarchy_kit::TextField;
@@ -167,6 +175,8 @@ let search = ui.add(TextField::new(&mut query).icon(glyph("find")).hint("Search"
 A list entered one item at a time is a `TagField`: the items as tags, with the
 text being typed after them, in one field that stays a line tall until the
 tags need more.
+
+<img src="docs/tagfield.png" width="616" alt="A tag field with two addresses and one being typed">
 
 ```rust
 use omarchy_kit::TagField;
@@ -202,6 +212,8 @@ TagField::commit(&mut addresses, &mut typing, is_address);
 One thing on or off: a box, filled with the accent and ticked while on, and
 what it is beside it.
 
+<img src="docs/checkbox.png" width="616" alt="Two checkboxes, one on">
+
 ```rust
 use omarchy_kit::Checkbox;
 
@@ -220,6 +232,8 @@ if ui.add(Checkbox::new(&mut match_case, "Match case")).changed() { /* … */ }
 A feature, or a whole group of settings, on or off — its settings kept
 either way: a pill whose knob slides across, the accent while on.
 
+<img src="docs/switch.png" width="616" alt="Switches: on, off, small">
+
 ```rust
 use omarchy_kit::Switch;
 
@@ -237,6 +251,8 @@ if ui.add(Switch::new(&mut snapping).name("Snapping")).changed() { /* … */ }
 A titled group of settings that folds — an inspector's Transform, Color,
 Audio — with a switch for the whole group and a reset at the header's far
 end.
+
+<img src="docs/section.png" width="616" alt="Sections: Transform open and on, Color switched off, Mask folded">
 
 ```rust
 use omarchy_kit::Section;
@@ -263,6 +279,8 @@ if shown.reset { grade = Grade::default(); }
 One number in the kit's field, kept within its range: typed, nudged or
 dragged.
 
+<img src="docs/numberfield.png" width="616" alt="Number fields with a suffix and a prefix">
+
 ```rust
 use omarchy_kit::NumberField;
 
@@ -288,6 +306,8 @@ ui.add(NumberField::new(&mut bitrate, 0.0..=f64::MAX).speed(50.0).suffix("kb/s")
 
 A choice among two to four, shown side by side as one control.
 
+<img src="docs/toggle.png" width="616" alt="Toggles: All / Unread, Day / Week / Month">
+
 ```rust
 use omarchy_kit::Toggle;
 
@@ -302,6 +322,8 @@ if ui.add(Toggle::new(&mut chosen, &["All", "Unread"])).changed() { /* … */ }
 
 A choice among more than fit side by side: the chosen one with a chevron, and
 the list under it when clicked.
+
+<img src="docs/dropdown.png" width="616" alt="A dropdown with its list open">
 
 ```rust
 use omarchy_kit::Dropdown;
@@ -320,6 +342,8 @@ if ui.add(Dropdown::new(&mut mode, &["normal", "multiply", "screen"]).width(160.
 
 An amount between two ends: its label above, a knob on a track, and a field at
 the end with the value, to type into.
+
+<img src="docs/slider.png" width="616" alt="Sliders: a label above; inline labels with gradient tracks and a log scale">
 
 ```rust
 use omarchy_kit::Slider;
@@ -379,6 +403,8 @@ as a grid to pick from, with the colours used last under it and a field for
 any colour as `#RRGGBB`. `ColorButton` is the quiet button that opens them,
 with the colour it applies under its icon.
 
+<img src="docs/swatches.png" width="296" alt="Swatches with transparency, and a colour button">
+
 ```rust
 use omarchy_kit::{ColorButton, Swatches};
 
@@ -405,6 +431,8 @@ if ui.add(Swatches::new(&mut colour).clear("Automatic")).changed() { /* … */ }
 
 A card with a title and a × that closes it, around whatever the app puts in
 it.
+
+<img src="docs/dialog.png" width="600" alt="A modal dialog over a dimmed window">
 
 ```rust
 use omarchy_kit::Dialog;
@@ -435,6 +463,8 @@ if shown.inner == Some(true) { /* go */ }
 The line along the bottom of a window: where the app is, quietly, then what
 just happened; at the far end, what the app keeps there.
 
+<img src="docs/statusline.png" width="600" alt="A status line along the window's bottom">
+
 ```rust
 use omarchy_kit::StatusLine;
 
@@ -453,6 +483,8 @@ StatusLine::new("status")
 
 The field's frame — its fill, its corner, the accent outline while what it
 holds has the keyboard — around anything the other elements do not cover.
+
+<img src="docs/field.png" width="616" alt="A multi-line editor in the field's frame">
 
 ```rust
 use omarchy_kit::{Size, field};
@@ -480,6 +512,8 @@ let (rect, response) = ui.allocate_exact_size(size, Sense::click());
 Item { open, keyed, hovered: response.hovered(), size: Size::Regular }.paint(ui, rect);
 ```
 
+<img src="docs/item.png" width="616" alt="Item marks: open, under the pointer, where the keyboard is, none">
+
 - `open`: what is on screen beside its list — filled.
 - `hovered`: under the pointer — a quiet fill.
 - `keyed`: where the keyboard is — the accent outline, shown only in the
@@ -491,6 +525,8 @@ Item { open, keyed, hovered: response.hovered(), size: Size::Regular }.paint(ui,
 Every action an app has, found by typing: a field at the top of the window,
 over the actions that match what is typed, each with its key at the end of
 its line.
+
+<img src="docs/palette.png" width="640" alt="The command palette, open">
 
 ```rust
 use omarchy_kit::{Choice, CommandPalette};
@@ -530,6 +566,8 @@ if let Some(i) = self.command_palette.show(ctx, "Ctrl+K", &choices) { /* run cho
 The menu bar along a window's top, and the menu a right-click opens: the
 same lines in both, each with its label on the left and its key, dim, on the
 right.
+
+<img src="docs/menus.png" width="456" alt="A menu bar with File open and its Export submenu">
 
 ```rust
 use omarchy_kit::{MenuBar, context_menu};
@@ -622,6 +660,8 @@ harness.get_by_role_and_label(Role::Button, "Settings").click();
   - transport: play, pause, step-back, step-forward, start, end,
     shuttle-back, shuttle-forward;
   - source monitor: mark-in, mark-out, insert, overwrite.
+
+  <img src="docs/icons.png" width="616" alt="Every shared icon, with its name">
 
   An app draws its own glyphs with the same `icons::Pen`, so every icon has
   one stroke weight and one size. An element takes any
