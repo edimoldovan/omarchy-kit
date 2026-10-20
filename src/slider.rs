@@ -281,18 +281,19 @@ impl<T: Amount> Widget for Slider<'_, T> {
         } else {
             format(value, self.decimals)
         };
-        let edit = ui
-            .scope_builder(egui::UiBuilder::new().max_rect(field_rect), |ui| {
-                let mut field = TextField::new(&mut text).width(FIELD).id_salt(field_id);
-                if size == Size::Small {
-                    field = field.small();
-                }
-                if !self.suffix.is_empty() {
-                    field = field.key(self.suffix.trim());
-                }
-                ui.add(field)
-            })
-            .inner;
+        // In the room the slider already took, left to right whatever the
+        // row it sits in: a right-to-left status line, say.
+        let mut room = ui.new_child(
+            egui::UiBuilder::new().max_rect(field_rect).layout(egui::Layout::left_to_right(egui::Align::Center)),
+        );
+        let mut field = TextField::new(&mut text).width(FIELD).id_salt(field_id);
+        if size == Size::Small {
+            field = field.small();
+        }
+        if !self.suffix.is_empty() {
+            field = field.key(self.suffix.trim());
+        }
+        let edit = room.add(field);
         if edit.gained_focus() {
             ui.data_mut(|d| d.insert_temp(orig_id, original));
         }

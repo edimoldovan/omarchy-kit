@@ -178,3 +178,21 @@ fn a_number_field_takes_a_prefix_a_suffix_and_its_range() {
     assert_eq!(typed(&mut harness, "250"), 100.0, "kept within the range");
     assert_eq!(typed(&mut harness, "-3"), 0.0);
 }
+
+/// In a right-to-left row, as a status line's far end is, what comes after
+/// a slider sits beside it, not over its track.
+#[test]
+fn a_slider_keeps_its_room_in_a_right_to_left_row() {
+    let harness = Harness::new_ui_state(
+        |ui, zoom: &mut f32| {
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                ui.add(Slider::new(zoom, 40.0..=400.0).decimals(0).small().width(190.0).name("Zoom").id_salt("zoom"));
+                ui.label("Count 42");
+            });
+        },
+        100.0,
+    );
+    let track = harness.get_by_role_and_label(Role::Slider, "Zoom").rect();
+    let count = harness.get_by_role_and_label(Role::Label, "Count 42").rect();
+    assert!(count.right() <= track.left(), "the label beside the slider: {count:?} {track:?}");
+}
