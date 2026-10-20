@@ -183,7 +183,7 @@ impl Swatches<'_> {
         let id = id.unwrap_or_else(|| ui.next_auto_id().with("omarchy-kit-swatches"));
         let mut picked: Option<Option<Color32>> = None;
         let mut by_opacity = false;
-        let mut inner = ui.scope(|ui| {
+        let mut inner = ui.vertical(|ui| {
             ui.set_width(width);
             ui.spacing_mut().item_spacing = Vec2::splat(GAP);
             if let Some(label) = &clear {

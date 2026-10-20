@@ -186,6 +186,24 @@ fn a_colour_buttons_field_takes_a_typed_colour() {
     assert_eq!(*harness.state(), parse_argb("#80FF2040"));
 }
 
+/// Swatches keep their own layout in a row: the greys on one line, the hues
+/// on the lines under them.
+#[test]
+fn swatches_in_a_row_keep_their_grid() {
+    let harness = Harness::new_ui_state(
+        |ui, colour: &mut Option<Color32>| {
+            ui.horizontal(|ui| {
+                ui.add(Swatches::new(colour).id_salt("in-a-row"));
+            });
+        },
+        None,
+    );
+    let black = harness.get_by_role_and_label(Role::ColorWell, "#000000").rect();
+    let red = harness.get_by_role_and_label(Role::ColorWell, "#C00000").rect();
+    assert!(red.top() > black.bottom(), "the hues under the greys: {black:?} {red:?}");
+    assert_eq!(red.left(), harness.get_by_role_and_label(Role::ColorWell, "#FFFFFF").rect().left(), "in the same column");
+}
+
 /// Dragging a colour button's opacity keeps its swatches open, so the drag
 /// goes on to where it is let go.
 #[test]
